@@ -54,6 +54,8 @@ cargo test -p yio_fence                              # ← 围栏契约门
 
 ### Rust → Unity .dll 闭环（Windows 本机是唯一的编码机）
 
+**双机环境（2026-09-07 记档）**：编码机 = 公司机，**不能装 Unity**——公司机会话只做 cargo / headless dotnet 三工程 / 纯文本工作；一切 Unity 执行面（uloop / PlayMode / player build / license 操作）只在家用机（装 6000.5.0f1 + 2021.3.45f2）的会话里做。公司机侧 Unity 回归兜底 = rust-ci 的 dotnet-headless job + #37 启用后的 unity-smoke CI。「拷贝时 Unity 关着」「dll 锁探测」等仅指家用机会话。
+
 按记忆/工作流：**任何** Rust 改动（含 `crates/packer/pkg/templates/` 下的文档——scaffold/skill 内容编进 exe 字节，纯「文档批」也会触发 staleness 门）后必须重编 + commit `.dll`，否则测不了——日常一条命令 `cargo run -p xtask -- reout`（重编 dll + yio.exe + yio_gui.exe 全家桶 → 拷贝 → sync-bindings → showcase bundle + HeadlessTests fixture 包无条件重打 + 字节对比幂等——pkg 格式 bump 后的 fixture 陈货会在 dirty 清单自动现身；只报告待提交路径不自动提交；dll 锁先探测，Unity 开着会先报错）。产物 staleness 由 release-check / CI 硬门兜底。
 
 ```bash
