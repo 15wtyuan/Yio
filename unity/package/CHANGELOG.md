@@ -20,33 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **图标署名（CC BY 3.0）**：showcase 图标（含存量与新增 evict-a/b/c 测试图集）来自
   [game-icons.net](https://game-icons.net/)，作者 Lorc、Delapouite & contributors，
   许可 Creative Commons Attribution 3.0——存量图标自此补记署名。
-
-### Changed
-- **box-sizing 契约定版 content-box（#116，breaking）**：尺寸语义 = CSS 规范初始值——
-  `padding adds to the set width/height`（`width:420px + padding:22px` 渲染 464 外框），
-  `box-sizing` 声明依旧围栏硬拒、报错文案改为 content-box 减法指引。五层收敛：core 钉
-  ContentBox 不动；fence 报错文案改写（曾与契约矛盾八个月）；preview base.css / rect-diff
-  reset.css 去除 `*{box-sizing:border-box}` 重置（预览对拍器从此说真话），并中立化 Chrome
-  UA 对 form 控件自钉的 border-box；showcase 17 页 55 条「显式尺寸+padding」规则手算折算。
-  **根节点语义**：solve 期把 Stage 钉入的 root_size 以 `box_sizing=BorderBox` 覆写根 taffy
-  style（浏览器 ICB 同构）——root 自身 padding 内缩而非外溢出画布；全屏页惯用法 =
-  `width:100vw; height:100vh` + 零 padding，内缩交给子级（home 页已按此改写）。
-- **围栏选择器放行子代组合器 `>`（#114）**：复合控件嵌套态样式作用域——状态属性在控件
-  宿主（`[aria-selected]` 等）、视觉落在直接子 wrapper 时，后代选择器会连带命中嵌套同构
-  后代（选「材料」点亮嵌套「金属」行）；`>` 限直接父，`+`/`~` 继续拒。core 匹配器
-  Child 语义既有（scope 批已实现，本批补单测），打包期 control-css 命中校验同步 Child。
-  fence.md / css-reference.md 组合器小节同步。
-- **项目更名 Ikat → Yio（breaking）**：品牌、crate 与二进制名（`ikat_core`→`yio_core` 等、
-  `ikat`→`yio`、`ikat_gui.exe`→`yio_gui.exe`）、DLL 与 FFI 符号前缀（`ikat_ffi_c.dll`→
-  `yio_ffi_c.dll`、`ikat_*`→`yio_*`）、C# 命名空间与程序集（`Ikat.*`→`Yio.*`）、Unity 包 id
-  （`com.ikat.unity`→`com.yio.unity`）、工作区配置文件名（`.ikat/`→`.yio/`、
-  `ikat.workspace.json`→`yio.workspace.json`、`ikat.runtime.json`→`yio.runtime.json`）、
-  DSL token（`ikat-hook`→`yio-hook`、`ikat-preview`→`yio-preview`）全量更名。磁盘格式身份
-  同步换血：pkg 魔数 `LPKG`→`YPKG`、frame blob 魔数 `LOOM`→`YIO1`——旧 pkg.bin 全部失效，
-  须用新 `yio.exe` 重打；旧配置文件名与 DSL token 不再识别；消费侧 `Packages/manifest.json`
-  的包 id 引用须同步改。
-
-### Added
 - **组件文件按 stem 可实例化**：`components/` 目录文件直收进 pkg 组件映射，
   运行时 `Instantiate("my-widget")` / `GetTemplate` 按 stem 克隆（fgui 组件一等公民
   同构；api-reference 既有承诺的兑现）。独立实例化走组件语义——`<slot>` 无 light 子
@@ -75,7 +48,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `circle(50%)` = 内切圆）。运行时 CSS 通道接通（`StyleSheet.Add` 类规则 /
   `var()` 代换）。构建期硬拒组合：`overflow:scroll/auto` + `clip-path`、
   裁剪链深 > 4。
+- **preview 按工作区字体注册自动注入（#104）**：server 给每个服务页在
+  `<head>` 开标签后注入 `<style id="yio-preview-fonts">`——fonts 段每字体
+  一条 `@font-face`（`src: url(/ws/<file>)` 绝对路径，任意页面目录深度可解
+  析）+ `default` family 一条 `body` 规则（镜像 core「未声明 font-family →
+  默认字体兜底」语义——此前浏览器 UA 默认 serif，无 font-family 文本在预览
+  与运行时分叉）。注入先于页面自身样式，工作区 CSS 恒可覆盖默认规则。
+  `.ttc`（浏览器不支持 TrueType Collection）与磁盘缺失的注册字体跳过 +
+  stderr 告警——排版失真不再无提示。recipes.md 的手写 `@font-face` 教程
+  降级为「仅覆盖时需要」（不同源文件 / 超大字体换 `font-display: swap`）。
+- **字体管理命令闭环 + 单一默认契约（#106）**：`yio font remove <family>`
+  （摘注册；`fonts/` 下源文件保留——文件可能由人手管理，摘除后成孤儿由人清）
+  与 `yio font default <family>`（设为唯一默认）。`--default` 语义改为互斥
+  转移：新设默认自动摘除旧默认，不再产生双默认 workspace（运行时取哪个未
+  定义）。未注册 family 报数据错（exit 1）。
+- **`yio verify`：Unity batchmode 导入冒烟（#99）**：build 重打 → 拉起工程绑定的
+  Unity 编辑器（batchmode）→ 包内 `Yio.Editor.YioVerifySmoke.Run` 做 Refresh +
+  逐文件正向加载（png → Texture2D、其余 → 非空 Object）→ 解析报告。把「产物可
+  导入」从人肉开 Unity 变成一条命令（发版本地验收面）。编辑器三层查找：
+  `--unity-editor` 参数 → `ProjectVersion.txt` 匹配 Hub 标准目录 → exit 2 教
+  用法；编辑器路径不进入库共享的 config。退出码：0 全过 / 1 导入失败（逐资产
+  诊断）/ 2 工具性失败（工程被编辑器占用、超时 15min、executeMethod 未运行）。
+  分层：本地导入冒烟归 verify，CI 的 EditMode/PlayMode 测试归 unity-smoke
+  workflow（等 license 启用），两层不重复。
+- **画序声明完整性双门（#101）**：E1（error）= z-index 声明在非定位、非
+  flex item 元素上直接拒绝——浏览器对该声明视而不见而运行时恒生效，预览
+  会说谎；围栏里写不出来的分歧够不着，运行时 API 直改 z 不受影响。
+  W1（warning）= 同父兄弟 static 与 positioned（或声明 z）混排、static 侧
+  无显式 z——positioned 元素恒画在 static 之上（与树序无关），漏声明靠
+  「碰巧画对」正是 #96/#100 的成因；补 `position:relative; z-index:0`
+  （同视觉、显式意图）消警。两门同看 inline + 结构匹配 class 规则
+  （`.overlay{position:absolute}` 类写法计入，运行时可变属性选择器规则
+  跳过防误报）。存量内容影响：真实工作区 0 error（class 规则视野消除了
+  最常见误报形态），showcase 存量 28 处 W1 warning（不拦构建，债可见化）。
+- **CLI ↔ Unity 包版本漂移自动检测（#80）**：`yio check` 顺 config 的
+  `unity_root` 读 `Packages/packages-lock.json`，`com.yio.unity` 版本与
+  CLI 版本不一致时告 `YioVersionDrift` warning（双向：CLI 落后指向刷新
+  `.yio/` 的 exe，CLI 超前指向更新 Unity 包——`format_version` 只增）。
+  支持三种 lock 形态：裸 semver / `file:` 本地引用（顺路径读目标
+  package.json）/ git URL（取 `#v` 片段，裸 commit hash 无法离线定版则
+  跳过）。无 `unity_root`（本地模式）或 lock 无条目（未装包）不检。
+
 ### Changed
+- **box-sizing 契约定版 content-box（#116，breaking）**：尺寸语义 = CSS 规范初始值——
+  `padding adds to the set width/height`（`width:420px + padding:22px` 渲染 464 外框），
+  `box-sizing` 声明依旧围栏硬拒、报错文案改为 content-box 减法指引。五层收敛：core 钉
+  ContentBox 不动；fence 报错文案改写（曾与契约矛盾八个月）；preview base.css / rect-diff
+  reset.css 去除 `*{box-sizing:border-box}` 重置（预览对拍器从此说真话），并中立化 Chrome
+  UA 对 form 控件自钉的 border-box；showcase 17 页 55 条「显式尺寸+padding」规则手算折算。
+  **根节点语义**：solve 期把 Stage 钉入的 root_size 以 `box_sizing=BorderBox` 覆写根 taffy
+  style（浏览器 ICB 同构）——root 自身 padding 内缩而非外溢出画布；全屏页惯用法 =
+  `width:100vw; height:100vh` + 零 padding，内缩交给子级（home 页已按此改写）。
+- **围栏选择器放行子代组合器 `>`（#114）**：复合控件嵌套态样式作用域——状态属性在控件
+  宿主（`[aria-selected]` 等）、视觉落在直接子 wrapper 时，后代选择器会连带命中嵌套同构
+  后代（选「材料」点亮嵌套「金属」行）；`>` 限直接父，`+`/`~` 继续拒。core 匹配器
+  Child 语义既有（scope 批已实现，本批补单测），打包期 control-css 命中校验同步 Child。
+  fence.md / css-reference.md 组合器小节同步。
+- **项目更名 Ikat → Yio（breaking）**：品牌、crate 与二进制名（`ikat_core`→`yio_core` 等、
+  `ikat`→`yio`、`ikat_gui.exe`→`yio_gui.exe`）、DLL 与 FFI 符号前缀（`ikat_ffi_c.dll`→
+  `yio_ffi_c.dll`、`ikat_*`→`yio_*`）、C# 命名空间与程序集（`Ikat.*`→`Yio.*`）、Unity 包 id
+  （`com.ikat.unity`→`com.yio.unity`）、工作区配置文件名（`.ikat/`→`.yio/`、
+  `ikat.workspace.json`→`yio.workspace.json`、`ikat.runtime.json`→`yio.runtime.json`）、
+  DSL token（`ikat-hook`→`yio-hook`、`ikat-preview`→`yio-preview`）全量更名。磁盘格式身份
+  同步换血：pkg 魔数 `LPKG`→`YPKG`、frame blob 魔数 `LOOM`→`YIO1`——旧 pkg.bin 全部失效，
+  须用新 `yio.exe` 重打；旧配置文件名与 DSL token 不再识别；消费侧 `Packages/manifest.json`
+  的包 id 引用须同步改。
 - **尺寸语义修正为 CSS 初始值 content-box**：声明 `width`/`height` 现为内容尺寸，
   padding/border 加在外侧（浏览器 UA 缺省语义；`ResolvedStyle` 的 taffy
   `box_sizing` 显式钉 `ContentBox`）。此前 taffy 0.14 默认 BorderBox（#82 升级时
@@ -110,6 +147,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   core 侧按模板分池克隆复用（slot 永驻不变量保持），spacer 估高按蓝图均值分化，
   `Notify*` 后 C# 侧重推受影响区间。多模板未给选择（无 ItemTemplate/selector）时
   首次 `ItemCount` 抛 `UIContractException`。
+- **frame blob v15 列级增量（#109）**：未变更行出 SOA 进段末 16B/条 Skip
+  段；胖参数块（color_matrix/effect/shadow/gradient）挪 fat arena（全零
+  不写）。全 Skip 帧带宽 132+16n 字节（v14 为 128+512n）。
+- **增量渲染构建（#109）**：输入指纹命中的节点整段复用上帧渲染产物——
+  ~2400 节点稳态帧构建耗时约减半；500 血条压测稳态 ~9ms（对照全量重建
+  ~16.9ms）。
+- **fit 模式 safe-area 基座反转：贴物理边 + CSS 级避让（#110）**：`fit-width` /
+  `fit-height` 的画布不再从 `Screen.safeArea` 起算（旧行为在异形屏留出一条
+  不被 UI 覆盖的空带 = 局部黑边），改为贴物理全屏——scale 按物理宽/高算，
+  刘海带被画布覆盖、背景满铺贴边。避让交给 CSS：新增
+  `env(safe-area-inset-top/right/bottom/left)` 作为长度值来源（任意长度属性
+  可用，按 design px 换算），元素用它写 padding/inset 自行避开 notch /
+  home indicator（web `viewport-fit=cover` 语义）。letterbox 不变（black
+  bars 已让位，env() 恒 0，不重复避让）。**Breaking**：Driver 的
+  `_safeArea` Inspector 开关移除（语义统一后它是第二真理源）；fit 模式下
+  vw/vh 分母变为含 unsafe 带的完整画布（100vh = 物理全高）。
+- **视口单位放开到全长度属性（#110）**：`vw` / `vh` / `vmin` / `vmax` 此前
+  只收尺寸族/inset/margin，现放开到 `font-size` / `padding` 族 / `gap` 族 /
+  `letter-spacing` / `border-radius`（响应式字号 `font-size: 2vmin` 由此
+  而来；`%` for font-size 仍拒）。字号/字距的视口值沿继承链传播 resolved
+  px。`inset` 四边简写进围栏。pkg 格式 v51（旧 pkg.bin 拒载，须重打）。
+
 ### Fixed
 - **树叶子条目点击激活父分组**：leaf treeitem 原不持控件态，指针激活的目标解析
   （find_control_at 按控件态上溯）会跳过叶子落到父 branch——点叶子 = 选中父 +
@@ -180,32 +239,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **共享资源宿主（#109）**：多 Stage 共享字体注册/字形图集/图片尺寸表
   （`YioResourceHost`），字体注册一次全 Stage 复用（无 id churn / 图集
   重光栅）；单 Stage 行为不变。
-
-### Changed
-- **frame blob v15 列级增量（#109）**：未变更行出 SOA 进段末 16B/条 Skip
-  段；胖参数块（color_matrix/effect/shadow/gradient）挪 fat arena（全零
-  不写）。全 Skip 帧带宽 132+16n 字节（v14 为 128+512n）。
-- **增量渲染构建（#109）**：输入指纹命中的节点整段复用上帧渲染产物——
-  ~2400 节点稳态帧构建耗时约减半；500 血条压测稳态 ~9ms（对照全量重建
-  ~16.9ms）。
-- **fit 模式 safe-area 基座反转：贴物理边 + CSS 级避让（#110）**：`fit-width` /
-  `fit-height` 的画布不再从 `Screen.safeArea` 起算（旧行为在异形屏留出一条
-  不被 UI 覆盖的空带 = 局部黑边），改为贴物理全屏——scale 按物理宽/高算，
-  刘海带被画布覆盖、背景满铺贴边。避让交给 CSS：新增
-  `env(safe-area-inset-top/right/bottom/left)` 作为长度值来源（任意长度属性
-  可用，按 design px 换算），元素用它写 padding/inset 自行避开 notch /
-  home indicator（web `viewport-fit=cover` 语义）。letterbox 不变（black
-  bars 已让位，env() 恒 0，不重复避让）。**Breaking**：Driver 的
-  `_safeArea` Inspector 开关移除（语义统一后它是第二真理源）；fit 模式下
-  vw/vh 分母变为含 unsafe 带的完整画布（100vh = 物理全高）。
-- **视口单位放开到全长度属性（#110）**：`vw` / `vh` / `vmin` / `vmax` 此前
-  只收尺寸族/inset/margin，现放开到 `font-size` / `padding` 族 / `gap` 族 /
-  `letter-spacing` / `border-radius`（响应式字号 `font-size: 2vmin` 由此
-  而来；`%` for font-size 仍拒）。字号/字距的视口值沿继承链传播 resolved
-  px。`inset` 四边简写进围栏。pkg 格式 v51（旧 pkg.bin 拒载，须重打）。
-
-
-### Fixed
 - **HTML `draggable="true"` 打包即丢——声明式拖拽使能无效（#75 验收批）**：组件
   展开路径（真实打包编排 `bridge_with_components`）的元素构造把 `draggable`
   硬编码 false——旧 `bridge()` 只有单测在用，测试绿但所有页面节点打进 pkg
@@ -305,52 +338,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   根容器写 `height:100%`（浏览器习惯写法）会塌成内容高——预览纵向溢出、
   底部错位，check 零警告，预览与运行时行为分叉。补满高后预览的
   containing block 语义与运行时 stage 对齐（与外壳 shell 自身写法一致）。
-
-### Added
-- **preview 按工作区字体注册自动注入（#104）**：server 给每个服务页在
-  `<head>` 开标签后注入 `<style id="yio-preview-fonts">`——fonts 段每字体
-  一条 `@font-face`（`src: url(/ws/<file>)` 绝对路径，任意页面目录深度可解
-  析）+ `default` family 一条 `body` 规则（镜像 core「未声明 font-family →
-  默认字体兜底」语义——此前浏览器 UA 默认 serif，无 font-family 文本在预览
-  与运行时分叉）。注入先于页面自身样式，工作区 CSS 恒可覆盖默认规则。
-  `.ttc`（浏览器不支持 TrueType Collection）与磁盘缺失的注册字体跳过 +
-  stderr 告警——排版失真不再无提示。recipes.md 的手写 `@font-face` 教程
-  降级为「仅覆盖时需要」（不同源文件 / 超大字体换 `font-display: swap`）。
-- **字体管理命令闭环 + 单一默认契约（#106）**：`yio font remove <family>`
-  （摘注册；`fonts/` 下源文件保留——文件可能由人手管理，摘除后成孤儿由人清）
-  与 `yio font default <family>`（设为唯一默认）。`--default` 语义改为互斥
-  转移：新设默认自动摘除旧默认，不再产生双默认 workspace（运行时取哪个未
-  定义）。未注册 family 报数据错（exit 1）。
-- **`yio verify`：Unity batchmode 导入冒烟（#99）**：build 重打 → 拉起工程绑定的
-  Unity 编辑器（batchmode）→ 包内 `Yio.Editor.YioVerifySmoke.Run` 做 Refresh +
-  逐文件正向加载（png → Texture2D、其余 → 非空 Object）→ 解析报告。把「产物可
-  导入」从人肉开 Unity 变成一条命令（发版本地验收面）。编辑器三层查找：
-  `--unity-editor` 参数 → `ProjectVersion.txt` 匹配 Hub 标准目录 → exit 2 教
-  用法；编辑器路径不进入库共享的 config。退出码：0 全过 / 1 导入失败（逐资产
-  诊断）/ 2 工具性失败（工程被编辑器占用、超时 15min、executeMethod 未运行）。
-  分层：本地导入冒烟归 verify，CI 的 EditMode/PlayMode 测试归 unity-smoke
-  workflow（等 license 启用），两层不重复。
-- **画序声明完整性双门（#101）**：E1（error）= z-index 声明在非定位、非
-  flex item 元素上直接拒绝——浏览器对该声明视而不见而运行时恒生效，预览
-  会说谎；围栏里写不出来的分歧够不着，运行时 API 直改 z 不受影响。
-  W1（warning）= 同父兄弟 static 与 positioned（或声明 z）混排、static 侧
-  无显式 z——positioned 元素恒画在 static 之上（与树序无关），漏声明靠
-  「碰巧画对」正是 #96/#100 的成因；补 `position:relative; z-index:0`
-  （同视觉、显式意图）消警。两门同看 inline + 结构匹配 class 规则
-  （`.overlay{position:absolute}` 类写法计入，运行时可变属性选择器规则
-  跳过防误报）。存量内容影响：真实工作区 0 error（class 规则视野消除了
-  最常见误报形态），showcase 存量 28 处 W1 warning（不拦构建，债可见化）。
-
-### Added
-- **CLI ↔ Unity 包版本漂移自动检测（#80）**：`yio check` 顺 config 的
-  `unity_root` 读 `Packages/packages-lock.json`，`com.yio.unity` 版本与
-  CLI 版本不一致时告 `YioVersionDrift` warning（双向：CLI 落后指向刷新
-  `.yio/` 的 exe，CLI 超前指向更新 Unity 包——`format_version` 只增）。
-  支持三种 lock 形态：裸 semver / `file:` 本地引用（顺路径读目标
-  package.json）/ git URL（取 `#v` 片段，裸 commit hash 无法离线定版则
-  跳过）。无 `unity_root`（本地模式）或 lock 无条目（未装包）不检。
-
-### Fixed
 - **progressbar 填充比例 ARIA 语义化（#97）**：`aria-valuemin` 此前不参与填充
   数学（core 按 `value/max`，ARIA 标准是 `(value-min)/(max-min)`，min≠0 时
   填充偏少）。`ControlInit/ControlState::Progress` 补 min 字段（pkg 格式
