@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.0.18] - 2026-09-07
+
 ### Added
 - **图集页纹理逐出（#62）**：`SpriteResolver` 页缓存从「懒加载永不释放」升级为
   expireAfterAccess 逐出——页从最后一次被画起计时，闲置超 `PageEvictionGraceSeconds`

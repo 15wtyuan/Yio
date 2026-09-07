@@ -4884,7 +4884,7 @@ dependencies = [
 
 [[package]]
 name = "yio_pkg"
-version = "0.0.17"
+version = "0.0.18"
 dependencies = [
  "etagere",
  "image",
