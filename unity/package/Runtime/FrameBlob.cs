@@ -1,10 +1,11 @@
 using System;
 using System.Text;
-using UnityEngine;
 
 namespace Yio
 {
     /// 帧 blob 托管解析视图。解析 Rust build_blob 产出的 little-endian blob。
+    /// 引擎无关层（零 UnityEngine）——Unity/Godot 后端共用；mesh/clip 视图类型用
+    /// 自有 YioVector2/YioColor，引擎侧自行转换。
     ///
     /// 布局（镜像 yio_ffi_c/src/blob.rs，v15 列级增量）：
     ///   header (132B): magic(u32 LE), version(u32)=15, node_count(u32),
@@ -254,11 +255,10 @@ namespace Yio
                     e.C = ReadF32(p + 16); e.D = ReadF32(p + 20);
                     e.Tx = ReadF32(p + 24); e.Ty = ReadF32(p + 28);
                     e.W = ReadF32(p + 32); e.H = ReadF32(p + 36);
-                    // radii 序 [TL, TR, BR, BL] 各 (rx, ry)。
-                    e.RadiiTlTr = new UnityEngine.Vector4(
-                        ReadF32(p + 40), ReadF32(p + 44), ReadF32(p + 48), ReadF32(p + 52));
-                    e.RadiiBrBl = new UnityEngine.Vector4(
-                        ReadF32(p + 56), ReadF32(p + 60), ReadF32(p + 64), ReadF32(p + 68));
+                    // radii 顺序 [TL, TR, BR, BL] 各 (rx, ry)——blob 按 8 f32 顺排。
+                    e.Radii = new YioVector2[4];
+                    for (int r = 0; r < 4; r++)
+                        e.Radii[r] = new YioVector2(ReadF32(p + 40 + r * 8), ReadF32(p + 44 + r * 8));
                     e.CircleCx = ReadF32(p + 72);
                     e.CircleCy = ReadF32(p + 76);
                     e.CircleR = ReadF32(p + 80);
@@ -266,17 +266,17 @@ namespace Yio
                     int polyOff = (int)ReadU32(p + 88);
                     if (polyCount > 0)
                     {
-                        e.Poly = new UnityEngine.Vector2[polyCount];
+                        e.Poly = new YioVector2[polyCount];
                         int q = entriesEnd + polyOff;
                         for (int k = 0; k < polyCount; k++)
                         {
-                            e.Poly[k] = new UnityEngine.Vector2(ReadF32(q), ReadF32(q + 4));
+                            e.Poly[k] = new YioVector2(ReadF32(q), ReadF32(q + 4));
                             q += 8;
                         }
                     }
                     else
                     {
-                        e.Poly = System.Array.Empty<UnityEngine.Vector2>();
+                        e.Poly = System.Array.Empty<YioVector2>();
                     }
                     list.Add(e);
                 }
@@ -297,15 +297,15 @@ namespace Yio
             var seg = new MeshSegment(vertCount, idxCount);
             for (int v = 0; v < vertCount; v++)
             {
-                seg.Verts[v] = new UnityEngine.Vector2(ReadF32(p), ReadF32(p + 4)); p += 8;
+                seg.Verts[v] = new YioVector2(ReadF32(p), ReadF32(p + 4)); p += 8;
             }
             for (int v = 0; v < vertCount; v++)
             {
-                seg.Uvs[v] = new UnityEngine.Vector2(ReadF32(p), ReadF32(p + 4)); p += 8;
+                seg.Uvs[v] = new YioVector2(ReadF32(p), ReadF32(p + 4)); p += 8;
             }
             for (int v = 0; v < vertCount; v++)
             {
-                seg.Colors[v] = new UnityEngine.Color(ReadF32(p), ReadF32(p + 4), ReadF32(p + 8), ReadF32(p + 12)); p += 16;
+                seg.Colors[v] = new YioColor(ReadF32(p), ReadF32(p + 4), ReadF32(p + 8), ReadF32(p + 12)); p += 16;
             }
             for (int k = 0; k < idxCount; k++) { seg.Idx[k] = ReadU32(p); p += 4; }
             return seg;
@@ -350,26 +350,26 @@ namespace Yio
         public int ShapeKind;
         public float A, B, C, D, Tx, Ty;
         public float W, H;
-        /// radii：(tl_rx, tl_ry, tr_rx, tr_ry) / (br_rx, br_ry, bl_rx, bl_ry)。HasRadii=false 全零。
-        public UnityEngine.Vector4 RadiiTlTr, RadiiBrBl;
+        /// radii：[TL, TR, BR, BL] 各 (rx, ry)。HasRadii=false 全零。
+        public YioVector2[] Radii = System.Array.Empty<YioVector2>();
         public float CircleCx, CircleCy, CircleR;
         /// polygon 顶点（box-local）；非 polygon 为空数组。
-        public UnityEngine.Vector2[] Poly = System.Array.Empty<UnityEngine.Vector2>();
+        public YioVector2[] Poly = System.Array.Empty<YioVector2>();
     }
 
     /// ReadMesh 返回的 mesh 数据拷贝。verts/uvs/colors 长度 == vertCount，Idx 长度 == idxCount。
     public sealed class MeshSegment
     {
-        public readonly UnityEngine.Vector2[] Verts;
-        public readonly UnityEngine.Vector2[] Uvs;
-        public readonly UnityEngine.Color[] Colors;
+        public readonly YioVector2[] Verts;
+        public readonly YioVector2[] Uvs;
+        public readonly YioColor[] Colors;
         public readonly uint[] Idx;
 
         public MeshSegment(int vertCount, int idxCount)
         {
-            Verts = new UnityEngine.Vector2[vertCount];
-            Uvs = new UnityEngine.Vector2[vertCount];
-            Colors = new UnityEngine.Color[vertCount];
+            Verts = new YioVector2[vertCount];
+            Uvs = new YioVector2[vertCount];
+            Colors = new YioColor[vertCount];
             Idx = new uint[idxCount];
         }
     }

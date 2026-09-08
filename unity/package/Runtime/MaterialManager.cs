@@ -92,8 +92,9 @@ namespace Yio
                 f0[e] = new Vector4(en.A, en.C, en.Tx, shapeKind);
                 f1[e] = new Vector4(en.B, en.D, en.Ty, rectKind);
                 rect[e] = new Vector4(en.W, en.H, en.Poly.Length, 0f);
-                r0[e] = en.RadiiTlTr;
-                r1[e] = en.RadiiBrBl;
+                // Radii 顺序 [TL, TR, BR, BL] 各 (rx, ry)——shader 侧 r0 = TL+TR、r1 = BR+BL。
+                r0[e] = new Vector4(en.Radii[0].X, en.Radii[0].Y, en.Radii[1].X, en.Radii[1].Y);
+                r1[e] = new Vector4(en.Radii[2].X, en.Radii[2].Y, en.Radii[3].X, en.Radii[3].Y);
                 circ[e] = new Vector4(en.CircleCx, en.CircleCy, en.CircleR, 0f);
                 // polygon 点：两点一 float4（x1,y1,x2,y2），entry 槽基址 = e × 8。
                 int slot = e * PolyVec4PerEntry;
@@ -101,14 +102,14 @@ namespace Yio
                 {
                     var p1 = en.Poly[k];
                     var p2 = en.Poly[k + 1];
-                    poly[slot + k / 2] = new Vector4(p1.x, p1.y, p2.x, p2.y);
+                    poly[slot + k / 2] = new Vector4(p1.X, p1.Y, p2.X, p2.Y);
                 }
                 // 奇数点数：末点重复进 float4 尾槽（core 限 3..=16 点，crossing 判定
                 // 用 poly_count 截断，重复点不参与）。
                 if ((en.Poly.Length & 1) == 1 && en.Poly.Length <= PolyVec4PerEntry * 2)
                 {
                     var last = en.Poly[en.Poly.Length - 1];
-                    poly[slot + (en.Poly.Length - 1) / 2] = new Vector4(last.x, last.y, last.x, last.y);
+                    poly[slot + (en.Poly.Length - 1) / 2] = new Vector4(last.X, last.Y, last.X, last.Y);
                 }
             }
             _clipFrame0ByCtx[maskContext] = f0;

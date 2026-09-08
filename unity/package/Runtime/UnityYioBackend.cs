@@ -252,8 +252,8 @@ namespace Yio
                     float minx = float.MaxValue, miny = float.MaxValue, maxx = float.MinValue, maxy = float.MinValue;
                     for (int v = 0; v < seg.Verts.Length; v++)
                     {
-                        minx = Math.Min(minx, seg.Verts[v].x); miny = Math.Min(miny, seg.Verts[v].y);
-                        maxx = Math.Max(maxx, seg.Verts[v].x); maxy = Math.Max(maxy, seg.Verts[v].y);
+                        minx = Math.Min(minx, seg.Verts[v].X); miny = Math.Min(miny, seg.Verts[v].Y);
+                        maxx = Math.Max(maxx, seg.Verts[v].X); maxy = Math.Max(maxy, seg.Verts[v].Y);
                     }
                     bbox = seg.Verts.Length > 0 ? $"({minx:F0},{miny:F0})~({maxx:F0},{maxy:F0})" : "(empty)";
                 }

@@ -136,7 +136,7 @@ namespace Yio
                 Assert.AreEqual(1, entries.Count, "ctx=7 应有 1 条 entry");
                 var en = entries[0];
                 Assert.IsTrue(en.HasRect && en.HasRadii, "rect + radii flags 解码");
-                Assert.AreEqual(3f, en.RadiiTlTr.x, 0.001f, "TL rx 解码应得 3");
+                Assert.AreEqual(3f, en.Radii[0].X, 0.001f, "TL rx 解码应得 3");
                 Assert.AreEqual(546f, en.W, 0.01f);
                 Assert.AreEqual(16f, en.H, 0.01f);
 

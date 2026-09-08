@@ -452,9 +452,10 @@ namespace Yio
 
             for (int i = 0; i < vc; i++)
             {
-                v.Add(new Vector3(seg.Verts[i].x, seg.Verts[i].y, 0f));
-                uv.Add(seg.Uvs[i]);
-                c.Add(seg.Colors[i]);
+                // MeshSegment 是引擎无关类型（YioVector2/YioColor）——此处显式转 Unity 类型上传。
+                v.Add(new Vector3(seg.Verts[i].X, seg.Verts[i].Y, 0f));
+                uv.Add(new UnityEngine.Vector2(seg.Uvs[i].X, seg.Uvs[i].Y));
+                c.Add(new UnityEngine.Color(seg.Colors[i].R, seg.Colors[i].G, seg.Colors[i].B, seg.Colors[i].A));
             }
             for (int i = 0; i < ic; i++) idx.Add((int)seg.Idx[i]);
 

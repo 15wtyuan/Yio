@@ -96,14 +96,17 @@ namespace Yio.Tests
                 new ClipEntryView
                 {
                     HasRect = true, HasRadii = true, W = 200f, H = 100f,
-                    RadiiTlTr = new Vector4(10f, 12f, 14f, 16f),
-                    RadiiBrBl = new Vector4(18f, 20f, 22f, 24f),
+                    Radii = new[]
+                    {
+                        new YioVector2(10f, 12f), new YioVector2(14f, 16f),
+                        new YioVector2(18f, 20f), new YioVector2(22f, 24f),
+                    },
                     A = 1f, D = 1f,
                 },
                 new ClipEntryView
                 {
                     HasShape = true, ShapeKind = 1,
-                    Poly = new[] { new Vector2(50f, 0f), new Vector2(100f, 50f), new Vector2(50f, 100f), new Vector2(0f, 50f) },
+                    Poly = new[] { new YioVector2(50f, 0f), new YioVector2(100f, 50f), new YioVector2(50f, 100f), new YioVector2(0f, 50f) },
                     A = 1f, D = 1f,
                 },
             };

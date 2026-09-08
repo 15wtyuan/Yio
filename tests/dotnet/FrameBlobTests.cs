@@ -360,16 +360,16 @@ namespace Yio.Tests.Core
             Assert.Equal(-10f, e5[0].Tx);
             Assert.Equal(100f, e5[0].W);
             Assert.Equal(200f, e5[0].H);
-            Assert.Equal(8f, e5[0].RadiiTlTr.x);
-            Assert.Equal(2f, e5[0].RadiiBrBl.z);  // bl rx
+            Assert.Equal(8f, e5[0].Radii[0].X);
+            Assert.Equal(2f, e5[0].Radii[3].X);  // bl rx
 
             var e8 = blob.ReadClipEntries(8);
             Assert.Single(e8);
             Assert.True(e8[0].HasShape && !e8[0].HasRect);
             Assert.Equal(1, e8[0].ShapeKind);
             Assert.Equal(4, e8[0].Poly.Length);
-            Assert.Equal(50f, e8[0].Poly[0].x);
-            Assert.Equal(50f, e8[0].Poly[3].y);
+            Assert.Equal(50f, e8[0].Poly[0].X);
+            Assert.Equal(50f, e8[0].Poly[3].Y);
         }
 
         [Fact]
