@@ -87,3 +87,45 @@ pub extern "C" fn yio_stage_get_scroll_pos(
         }
     })
 }
+
+/// 读当前吸附页码（#59）。非 snap 容器/无吸附点/无效 node → out 填 -1（不 panic）。
+#[no_mangle]
+pub extern "C" fn yio_stage_get_page_index(
+    h: *const StageHandle,
+    node_id: u64,
+    out_index: *mut i32,
+) {
+    ffi_guard((), || {
+        let idx = if h.is_null() {
+            -1
+        } else {
+            let sh = unsafe { &*h };
+            sh.stage.get_page_index(NodeId(node_id)).unwrap_or(-1)
+        };
+        if !out_index.is_null() {
+            unsafe {
+                *out_index = idx;
+            }
+        }
+    })
+}
+
+/// 程序翻页（#59）。index clamp 进吸附点集；非 snap 容器 no-op。animated: u8
+///（0=瞬移 1=缓动）。null 句柄 → no-op。
+#[no_mangle]
+pub extern "C" fn yio_stage_scroll_to_page(
+    h: *mut StageHandle,
+    node_id: u64,
+    index: i32,
+    animated: u8,
+) {
+    ffi_guard((), || {
+        if h.is_null() {
+            return;
+        }
+        let handle = unsafe { &mut *h };
+        handle
+            .stage
+            .scroll_to_page(NodeId(node_id), index, animated != 0);
+    })
+}

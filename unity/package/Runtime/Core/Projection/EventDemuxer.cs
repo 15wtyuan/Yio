@@ -273,6 +273,13 @@ namespace Yio
                             new ControlExpandChangedEvent { _core = NewCore(nodeId), _expanded = evt.touchId != 0 });
                         break;
 
+                    // 滚动吸附页落定（core EVT_PAGE_CHANGED，31，#59）。payload = 落定页码
+                    //（touch_id:i32），node_id 指向 snap 容器。Node.PageChanged 订阅翻译。
+                    case (byte)EventType.PageChanged:
+                        DispatchTyped(nodeId,
+                            new ControlPageChangedEvent { _core = NewCore(nodeId), _pageIndex = evt.touchId });
+                        break;
+
                     // 长按（core 按住 ≥1.5s 发 EVT_LONG_PRESS=9，与 Click 独立——长按后松手
                     // 是否还 Click 由业务定，配 Node.CancelClick(touchId) 显式取消）。
                     case (byte)EventType.LongPress:

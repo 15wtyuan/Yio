@@ -3,9 +3,9 @@ use crate::style::color_filter::{self, IDENTITY};
 use crate::style::resolved::{
     BackgroundSize, BorderRadius, BorderStyle, BoxShadow, ClipPathDecl, CornerRadius, CursorStyle,
     DeferredLength, DisplayMode, GradCoord, Gradient, GradientStop, OverflowMode, OverflowWrap,
-    RadialExtent, RadialShape, ResolvedStyle, SafeSide, SliceInsets, TextAlign, TextDecoration,
-    TextSecurity, TextWrap, TransformOrigin, ViewportLen, ViewportUnit, WhiteSpace, WordBreak,
-    GRADIENT_MAX_STOPS, MAX_INSET_SHADOW_LAYERS, MAX_OUTER_SHADOW_LAYERS,
+    RadialExtent, RadialShape, ResolvedStyle, SafeSide, SliceInsets, SnapAlign, SnapTypeMode,
+    TextAlign, TextDecoration, TextSecurity, TextWrap, TransformOrigin, ViewportLen, ViewportUnit,
+    WhiteSpace, WordBreak, GRADIENT_MAX_STOPS, MAX_INSET_SHADOW_LAYERS, MAX_OUTER_SHADOW_LAYERS,
 };
 use crate::transform::LenPct;
 use taffy::geometry::{Rect, Size};
@@ -1201,6 +1201,30 @@ fn parse_overflow(value: &str) -> Option<OverflowMode> {
     }
 }
 
+/// 解析 `scroll-snap-type`（#59）：`none | x mandatory | y mandatory`。
+/// 子集即值域：裸 `x`/`y`（strictness 缺省 = proximity，围栏不收）、
+/// `both`/`block`/`inline`、`proximity` 全拒——返 None 让围栏报 FenceBadCssValue
+/// 引导写显式 mandatory 形。
+pub fn parse_scroll_snap_type(value: &str) -> Option<SnapTypeMode> {
+    match value.trim() {
+        "none" => Some(SnapTypeMode::None),
+        "x mandatory" => Some(SnapTypeMode::XMandatory),
+        "y mandatory" => Some(SnapTypeMode::YMandatory),
+        _ => None,
+    }
+}
+
+/// 解析 `scroll-snap-align`（#59）：`none | start | center | end`（CSS 单关键字）。
+pub fn parse_scroll_snap_align(value: &str) -> Option<SnapAlign> {
+    match value.trim() {
+        "none" => Some(SnapAlign::None),
+        "start" => Some(SnapAlign::Start),
+        "center" => Some(SnapAlign::Center),
+        "end" => Some(SnapAlign::End),
+        _ => None,
+    }
+}
+
 /// 解析 border 简写值：`<width> <style>? <color>?`（CSS 标准简写语义）。
 /// width 取首个 px token，style 取首个关键字（solid/dashed/dotted/double/none），
 /// color 取首个可解析颜色 token。width 缺失 → None（整条无效）。未声明 style 时
@@ -1851,6 +1875,22 @@ pub fn apply_decl(style: &mut ResolvedStyle, prop: &str, value: &str) -> bool {
             }
             true
         }
+        // scroll-snap 两属性（#59）：非法值 false（拒绝而非吞值——AI 拼错值时
+        // 围栏报错比静默不吸附可预测）。运行时 rematch 的 class 规则重放走同一 arm。
+        "scroll-snap-type" => match parse_scroll_snap_type(value) {
+            Some(m) => {
+                style.scroll_snap_type = m;
+                true
+            }
+            None => false,
+        },
+        "scroll-snap-align" => match parse_scroll_snap_align(value) {
+            Some(a) => {
+                style.scroll_snap_align = a;
+                true
+            }
+            None => false,
+        },
         "color" => {
             // transparent 关键字 + rgba(0,0,0,0)（AI 常与 transparent 混用）都判透明。
             // parse_color 仅认 hex 形式（3/6/8 位），rgba() 函数走不到——此处显式拦截避免渐变字三件套

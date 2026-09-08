@@ -359,6 +359,19 @@ namespace Yio
         public float DeltaY { get { return _deltaScrollY; } }
     }
 
+    // 滚动吸附页落定（core EVT_PAGE_CHANGED = 31，#59）。demux 解 stream 后派
+    // ControlPageChangedEvent（internal route struct，见文件尾），Node.PageChanged
+    // 订阅翻译为本公共事件。
+    public sealed class PageChangedEvent
+    {
+        internal Node _container;
+        internal int _pageIndex;
+        /// <summary>落定的 snap 容器节点。</summary>
+        public Node Container { get { return _container; } }
+        /// <summary>落定页码（吸附点序，0 起）。</summary>
+        public int PageIndex { get { return _pageIndex; } }
+    }
+
     // 18/19/20 = 真 core 事件源（crates/core/src/event.rs）：class 触发 + node.Play
     // 都发，demux 直读 stream 填 AnimationName（字符串表索引读回）。END 另兼容 v1 的
     // TweenComplete（type=16）→ AnimationEnd 分流（transition 旧路径，既有测试锁定）。
@@ -592,5 +605,25 @@ namespace Yio
         internal static byte EventType => (byte)YioEventType.ExpandChanged;
         /// <summary>展开新态（true=展开 / false=折叠）。</summary>
         public bool Expanded { get { return _expanded; } }
+    }
+
+    // 滚动吸附页落定（core EVT_PAGE_CHANGED，touch_id=页码，#59）。
+    // Node.PageChanged 订阅本 route struct（demux 解 EVT_PAGE_CHANGED 后派）。
+    internal struct ControlPageChangedEvent : IRouteEvent, IRouteEventCore
+    {
+        internal RouteEventCore _core;
+        RouteEventCore IRouteEventCore.Core => _core;
+        internal int _pageIndex;
+        public Node Target => _core.Target;
+        public Node CurrentTarget => _core.CurrentTarget;
+        public bool DefaultPrevented => _core._defaultPrevented;
+        public bool PropagationStopped => _core._propagationStopped;
+        public void StopPropagation() => _core.StopPropagation();
+        public void PreventDefault() => _core.PreventDefault();
+        public bool ImmediatePropagationStopped => _core._immediateStopped;
+        public void StopImmediatePropagation() => _core.StopImmediatePropagation();
+        internal static byte EventType => (byte)YioEventType.PageChanged;
+        /// <summary>落定页码（吸附点序，0 起）。</summary>
+        public int PageIndex { get { return _pageIndex; } }
     }
 }

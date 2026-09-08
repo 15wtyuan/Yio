@@ -1440,3 +1440,328 @@ fn nested_scroll_thumb_follows_ancestor_scroll() {
         r0.y
     );
 }
+
+// ── #59 scroll-snap ─────────────────────────────────────────────────────
+
+/// snap 测试场景：容器（idx0）overflow_x=Scroll + scroll_snap_type=XMandatory，
+/// layout_rect (0,0,100,100)；三页子 (0,0,100,100)/(100,0,100,100)/(200,0,100,100)
+/// 各自 scroll_snap_align=Start。content AABB = 300×100 → overlap_x=200，
+/// 期望 snap_points = [0, 100, 200]。
+fn build_snap_scene() -> Scene {
+    use crate::style::resolved::{SnapAlign, SnapTypeMode};
+    let mut pane_style = ResolvedStyle::default();
+    pane_style.overflow_x = OverflowMode::Scroll;
+    pane_style.scroll_snap_type = SnapTypeMode::XMandatory;
+    let mut page_style = ResolvedStyle::default();
+    page_style.scroll_snap_align = SnapAlign::Start;
+    let entries: Vec<(
+        Option<usize>,
+        NodeKind,
+        ResolvedStyle,
+        Vec<String>,
+        Option<String>,
+        bool,
+        Option<i32>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+    )> = vec![
+        (
+            None,
+            NodeKind::Container,
+            pane_style,
+            vec![],
+            None,
+            false,
+            None,
+            None,
+            None,
+            None,
+        ),
+        (
+            Some(0),
+            NodeKind::Container,
+            page_style.clone(),
+            vec![],
+            None,
+            false,
+            None,
+            None,
+            None,
+            None,
+        ),
+        (
+            Some(0),
+            NodeKind::Container,
+            page_style.clone(),
+            vec![],
+            None,
+            false,
+            None,
+            None,
+            None,
+            None,
+        ),
+        (
+            Some(0),
+            NodeKind::Container,
+            page_style,
+            vec![],
+            None,
+            false,
+            None,
+            None,
+            None,
+            None,
+        ),
+    ];
+    let mut s = Scene::build(&entries);
+    let pane = s.roots[0];
+    let xs = [0.0f32, 100.0, 200.0];
+    let kids: Vec<_> = s.get(pane).unwrap().children.clone();
+    for (i, (&c, &x)) in kids.iter().zip(xs.iter()).enumerate() {
+        let n = s.get_mut(c).unwrap();
+        n.layout_rect = Rect {
+            x,
+            y: 0.0,
+            w: 100.0,
+            h: 100.0,
+        };
+        let _ = i;
+    }
+    s.get_mut(pane).unwrap().layout_rect = Rect {
+        x: 0.0,
+        y: 0.0,
+        w: 100.0,
+        h: 100.0,
+    };
+    s
+}
+
+#[test]
+fn snap_points_computed_from_aligned_children() {
+    let mut scene = build_snap_scene();
+    refresh_content_sizes(&mut scene);
+    let pane = scene.roots[0];
+    let st = scene.scroll.get(pane).unwrap();
+    assert_eq!(st.snap_axis, Some(0));
+    assert_eq!(st.snap_points, vec![0.0, 100.0, 200.0]);
+}
+
+/// align=center 的偏移语义：页宽 60、viewport 100 → 目标 pos = lead − (100−60)/2 = lead−20。
+#[test]
+fn snap_points_center_align_offsets() {
+    use crate::style::resolved::SnapAlign;
+    let mut scene = build_snap_scene();
+    let pane = scene.roots[0];
+    let kids: Vec<_> = scene.get(pane).unwrap().children.clone();
+    for (i, &c) in kids.iter().enumerate() {
+        let n = scene.get_mut(c).unwrap();
+        n.style.scroll_snap_align = SnapAlign::Center;
+        n.layout_rect = Rect {
+            x: i as f32 * 100.0,
+            y: 0.0,
+            w: 60.0,
+            h: 100.0,
+        };
+    }
+    refresh_content_sizes(&mut scene);
+    let st = scene.scroll.get(pane).unwrap();
+    assert_eq!(st.snap_axis, Some(0));
+    // center：0−20→clamp 0；100−20=80；200−20=180 但 content AABB=260 →
+    // overlap=160，末点 clamp 到 160（最大滚动位即末页吸附位，浏览器同义）。
+    assert_eq!(st.snap_points, vec![0.0, 80.0, 160.0]);
+}
+
+/// align=None 的子不提供吸附点（CSS 初始值语义）：容器声明 snap-type 但全子
+/// 未声明 → snap_points 空 → 不吸附（自由滚动照旧）。
+#[test]
+fn snap_points_empty_when_no_child_aligned() {
+    let mut scene = build_snap_scene();
+    let pane = scene.roots[0];
+    let kids: Vec<_> = scene.get(pane).unwrap().children.clone();
+    for &c in &kids {
+        scene.get_mut(c).unwrap().style.scroll_snap_align = crate::style::resolved::SnapAlign::None;
+    }
+    refresh_content_sizes(&mut scene);
+    let st = scene.scroll.get(pane).unwrap();
+    assert_eq!(st.snap_axis, Some(0));
+    assert!(st.snap_points.is_empty());
+    assert_eq!(st.page_index(), -1);
+}
+
+/// 松手判定：顺向（净位移与越页方向一致）阈值 1/3 页（0.3）。
+#[test]
+fn snap_release_forward_third_commits_next_page() {
+    let mut st = ScrollPaneState {
+        snap_axis: Some(0),
+        snap_points: vec![0.0, 100.0, 200.0],
+        overlap: (200.0, 0.0),
+        scroll_pos: (35.0, 0.0),
+        snap_ref_pos: 0.0,
+        ..Default::default()
+    };
+    st.begin_snap_release(false); // 鼠标（PC 惯性阈值 500，v=0 → pred=0）
+    let target = st.tween_start.0 + st.tween_change.0;
+    assert!(
+        (target - 100.0).abs() < 1e-3,
+        "顺向越过 1/3 页应翻下一页，得 {target}"
+    );
+    assert_eq!(st.tweening[0], 2);
+}
+
+/// 慢拖不足 1/3 页 → 回本页。
+#[test]
+fn snap_release_short_drag_stays() {
+    let mut st = ScrollPaneState {
+        snap_axis: Some(0),
+        snap_points: vec![0.0, 100.0, 200.0],
+        overlap: (200.0, 0.0),
+        scroll_pos: (20.0, 0.0),
+        snap_ref_pos: 0.0,
+        ..Default::default()
+    };
+    st.begin_snap_release(false);
+    let target = st.tween_start.0 + st.tween_change.0;
+    assert!(
+        (target - 0.0).abs() < 1e-3,
+        "顺向 0.2 页应回本页，得 {target}"
+    );
+}
+
+/// 逆向（净位移方向与越页方向相反）阈值 2/3 页（0.3 顺向的对称位）：回退须过
+/// 1/3 页才退上一页（0.3×page 的镜像：delta<−0.3×page）。
+#[test]
+fn snap_release_reverse_drag() {
+    // 回退 25（<30=1/3 页）→ 停页 1。
+    let mut st = ScrollPaneState {
+        snap_axis: Some(0),
+        snap_points: vec![0.0, 100.0, 200.0],
+        overlap: (200.0, 0.0),
+        scroll_pos: (75.0, 0.0),
+        snap_ref_pos: 100.0,
+        ..Default::default()
+    };
+    st.begin_snap_release(false);
+    let target = st.tween_start.0 + st.tween_change.0;
+    assert!(
+        (target - 100.0).abs() < 1e-3,
+        "回退 0.25 页应停本页，得 {target}"
+    );
+    // 回退 35（>30）→ 退页 0。
+    let mut st = ScrollPaneState {
+        snap_axis: Some(0),
+        snap_points: vec![0.0, 100.0, 200.0],
+        overlap: (200.0, 0.0),
+        scroll_pos: (65.0, 0.0),
+        snap_ref_pos: 100.0,
+        ..Default::default()
+    };
+    st.begin_snap_release(false);
+    let target = st.tween_start.0 + st.tween_change.0;
+    assert!(
+        (target - 0.0).abs() < 1e-3,
+        "回退 0.35 页应退上一页，得 {target}"
+    );
+}
+
+/// 快甩：惯性预测终点作判定基准（fgui _pos 语义）——抬手位移小但预测终点远，
+/// 过半即翻；且单次至多翻 1 页（不跳页）。
+#[test]
+fn snap_release_fling_uses_projected_end_and_caps_one_page() {
+    let mut st = ScrollPaneState {
+        snap_axis: Some(0),
+        snap_points: vec![0.0, 100.0, 200.0],
+        overlap: (200.0, 0.0),
+        scroll_pos: (10.0, 0.0),
+        snap_ref_pos: 0.0,
+        velocity: (3000.0, 0.0), // 快甩：PC 阈 500，ratio clamp 1
+        ..Default::default()
+    };
+    st.begin_snap_release(false);
+    let target = st.tween_start.0 + st.tween_change.0;
+    assert!(
+        (target - 100.0).abs() < 1e-3,
+        "快甩应翻下一页且至多一页，得 {target}"
+    );
+}
+
+/// 滚轮整页步进：snap 轴上一滚一页（d<0 → 下一页；d>0 → 上一页），边界 clamp。
+#[test]
+fn snap_wheel_steps_pages() {
+    let mut st = ScrollPaneState {
+        snap_axis: Some(0),
+        snap_points: vec![0.0, 100.0, 200.0],
+        overlap: (200.0, 0.0),
+        scroll_pos: (0.0, 0.0),
+        ..Default::default()
+    };
+    st.apply_wheel((-1.0, 0.0)); // 向下/前进方向 → 下一页
+    assert!((st.scroll_pos.0 - 0.0).abs() < 1e-3, "tween 起点 pos 不动");
+    assert!((st.tween_start.0 + st.tween_change.0 - 100.0).abs() < 1e-3);
+    // 已在末页再向下 → clamp 末页。
+    st.scroll_pos = (200.0, 0.0);
+    st.apply_wheel((-1.0, 0.0));
+    assert!((st.tween_start.0 + st.tween_change.0 - 200.0).abs() < 1e-3);
+}
+
+/// 程序翻页 + PageIndex。
+#[test]
+fn scroll_to_page_and_index() {
+    let mut st = ScrollPaneState {
+        snap_axis: Some(0),
+        snap_points: vec![0.0, 100.0, 200.0],
+        overlap: (200.0, 0.0),
+        scroll_pos: (0.0, 0.0),
+        ..Default::default()
+    };
+    assert_eq!(st.page_index(), 0);
+    st.scroll_to_page(2, false);
+    assert_eq!(st.scroll_pos.0, 200.0);
+    assert_eq!(st.page_index(), 2);
+    // 越界 index clamp。
+    st.scroll_to_page(99, false);
+    assert_eq!(st.scroll_pos.0, 200.0);
+    st.scroll_to_page(-5, false);
+    assert_eq!(st.scroll_pos.0, 0.0);
+}
+
+/// PageChanged 结算：首帧发初始页；拖拽中/tween 中不结算；落定后净变才发。
+#[test]
+fn page_events_settle_only_when_idle() {
+    use crate::input::{EventRecord, EVT_PAGE_CHANGED};
+    let mut scene = build_snap_scene();
+    refresh_content_sizes(&mut scene);
+    let pane = scene.roots[0];
+
+    let mut out: Vec<EventRecord> = Vec::new();
+    drain_page_events(&mut scene, &mut out);
+    assert_eq!(
+        out.iter()
+            .filter(|e| e.event_type == EVT_PAGE_CHANGED)
+            .count(),
+        1,
+        "首帧结算发初始页 0"
+    );
+    assert_eq!(out.last().unwrap().touch_id, 0);
+
+    // 拖拽中 → 不结算。
+    scene.scroll.get_mut(pane).unwrap().scroll_dragging = true;
+    scene.scroll.get_mut(pane).unwrap().scroll_pos = (150.0, 0.0);
+    let mut out2: Vec<EventRecord> = Vec::new();
+    drain_page_events(&mut scene, &mut out2);
+    assert!(out2.is_empty(), "拖拽中不结算");
+
+    // 松手落定（拖拽结束、无 tween）→ 净变到页 1 → 发一次。
+    let st = scene.scroll.get_mut(pane).unwrap();
+    st.scroll_dragging = false;
+    let mut out3: Vec<EventRecord> = Vec::new();
+    drain_page_events(&mut scene, &mut out3);
+    assert_eq!(out3.len(), 1);
+    assert_eq!(out3[0].touch_id, 1);
+
+    // 无净变 → 不重发。
+    let mut out4: Vec<EventRecord> = Vec::new();
+    drain_page_events(&mut scene, &mut out4);
+    assert!(out4.is_empty());
+}

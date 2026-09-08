@@ -334,6 +334,13 @@ CSS 在围栏中以三个正交维度建模。每个 CSS 属性声明的结局�
 
 `overflow-x`, `overflow-y`
 
+**滚动吸附（#59 批1，swipe 翻页）**
+
+- `scroll-snap-type`（**不继承**，挂滚动容器）：`none` / `x mandatory` / `y mandatory`。围栏子集即值域——裸 `x`/`y`（CSS 里 strictness 缺省 = `proximity`）、`proximity`、`both`、`block`、`inline` 全拒（`FenceBadCssValue`，引导写显式 mandatory 形；单一真相源 = core `parse_scroll_snap_type`，inline 与 `<style>` 规则同门）。语义挂滚动容器：snap 轴无 `overflow:scroll/auto` 的元素声明 → check 期 warning（`FenceSnapNoEffect`，不吸附——与浏览器一致，但把静默失效显式化）。
+- `scroll-snap-align`（**不继承**，挂容器直接子）：`none` / `start` / `center` / `end`。CSS 初始值 `none`——未声明的子不提供吸附点；容器声明 snap-type 而无任何直接子声明 align → 同码 warning（AI 最常见漏写形态）。吸附目标 pos = 子对齐位与视口对齐位重合的 scroll_pos（start：子 lead 边贴视口起点；center：中心贴中心；end：trail 边贴终点），clamp 进 `[0, overlap]` 后升序去重为吸附点集；页码 = 吸附点序（0 起）。
+- **翻页判定**（core scroll.rs `begin_snap_release`，fgui AlignByPage 同构）：松手时以手势起点最近页为基准页 p，目标 ∈ {p-1, p, p+1}——**单次手势至多翻 1 页**（快甩不跳页，等价 `snap-stop:always`）；判定基准 = 惯性预测终点（手势位移 + 惯性外推，fgui `_pos` 语义）；有效位移超一页 → 过半（0.5）判定，否则顺向 1/3（0.3）、逆向 2/3（0.7）。滚轮在 snap 轴上整页步进（一滚一页，向相邻吸附点 tween）。
+- **运行时 API/事件**（见 public-api）：`PageIndex`（非 snap 容器 -1）/ `ScrollToPage(index, behavior)`（index clamp 进点集）；`PageChanged` 仅静止期结算净变化——拖拽穿越页界不逐页发、落定发一次、首帧结算发初始页（指示器 dots 初始态同步）、程序翻页落定后同发。
+
 ### 5.2 值校验（CssValueParser）
 
 每个属性的值通过对应的解析器校验。主要类型：

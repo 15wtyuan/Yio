@@ -172,6 +172,30 @@ pub enum OverflowMode {
     Auto = 3,
 }
 
+/// CSS `scroll-snap-type`（#59 围栏子集）：`none | x mandatory | y mandatory`。
+/// proximity/both/block/inline 围栏拒绝（值集即引导）。吸附物理由 scroll 模块实现；
+/// 本 enum 仅承载声明面。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[repr(u8)]
+pub enum SnapTypeMode {
+    #[default]
+    None = 0,
+    XMandatory = 1,
+    YMandatory = 2,
+}
+
+/// CSS `scroll-snap-align`（子元素）：吸附点对齐位。CSS 初始值 `none`
+/// （未声明的子不提供吸附点，与浏览器一致）。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[repr(u8)]
+pub enum SnapAlign {
+    #[default]
+    None = 0,
+    Start = 1,
+    Center = 2,
+    End = 3,
+}
+
 /// CSS background-size 三档（围栏子集）。
 /// `#[repr(u8)]` 保证序列化稳定；`Default = Stretch`（100% 语义，未设时拉伸填满，非 CSS auto）。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -825,6 +849,13 @@ pub struct ResolvedStyle {
     /// overflow 两轴模式。Default 双轴 Visible。
     pub overflow_x: OverflowMode,
     pub overflow_y: OverflowMode,
+    /// CSS `scroll-snap-type`（滚动吸附翻页，#59）。Default None（不吸附）。
+    /// 语义挂滚动容器；非滚动容器上声明是作者错误，check 期告警（不拒——
+    /// 与 overflow 不同，误声明不影响布局，只是无效能力）。
+    pub scroll_snap_type: SnapTypeMode,
+    /// CSS `scroll-snap-align`（子元素吸附点，#59）。Default None（不提供吸附点，
+    /// 照 CSS 初始值）。仅父容器 scroll_snap_type != None 时有意义。
+    pub scroll_snap_align: SnapAlign,
     /// CSS `clip-path`（fence 子集：`circle()` / `polygon()`）。None = 无形状遮罩。
     /// 声明即 clipper（裁自身绘制 + 子树，与 overflow 状态独立——web 原义）。
     /// 存声明面（px/% 待元素尺寸解析），消费点（render clip 链 / hit gate）惰性
@@ -1027,6 +1058,8 @@ impl Default for ResolvedStyle {
             opacity: 1.0,
             overflow_x: OverflowMode::Visible,
             overflow_y: OverflowMode::Visible,
+            scroll_snap_type: SnapTypeMode::None,
+            scroll_snap_align: SnapAlign::None,
             clip_path: None,
             color: [0.0, 0.0, 0.0, 1.0],
             caret_color: None,

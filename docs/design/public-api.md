@@ -204,7 +204,10 @@ public class Container : Node {
     public YioVector2 ScrollPos { get; }   // 滚动容器当前滚动位置（非滚动容器返 (0,0)）；与 ScrollTo 成对
     public void RestartAnimations();     // 重启子树内声明式（class 触发）keyframes：player 原地重建，节点状态全保留；node.Play 程序化 player 不受影响
     public void ScrollTo(YioVector2 pos, ScrollBehavior behavior = ScrollBehavior.Smooth);
+    public int PageIndex { get; }        // 吸附页码（#59）：snap 容器当前最近吸附页（scroll-snap-type 声明元素）；非 snap 容器/无吸附点返 -1
+    public void ScrollToPage(int index, ScrollBehavior behavior = ScrollBehavior.Smooth);  // 程序翻页：index clamp 进吸附点集（留 ScrollTo* 家族命名）；非 snap 容器 no-op；落定后 PageChanged
     public event Action<ScrollChangedEvent> Scrolled;
+    public event Action<PageChangedEvent> PageChanged;  // 吸附页落定（#59）：仅静止期结算净变化——拖拽穿越页界不逐页发、落定发一次；首帧结算发初始页（dots 初始态同步）；程序翻页同发
     public UITemplate GetTemplate(string name);          // 取内联 template
 }
 ```
@@ -284,7 +287,7 @@ public interface IRouteEvent {
 | 拖拽 | DragStart/Move/End |
 | 键盘 | KeyDown/Up |
 | 焦点 | Focus/Blur |
-| 滚动 | ScrollChanged |
+| 滚动 | ScrollChanged, PageChanged |
 | 动画 | AnimationStart/End/Iteration, TransitionEnd |
 
 指针键用 `PointerButton` 枚举（Left/Right/Middle）。

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <title>Yio 靶子冻结 Showcase · swipe</title>
+  <style>
+  /* swipe 页（#59 批1）：scroll-snap-type/align 声明面 + 翻页判定（1/3·2/3·快甩过半
+     单页上限）+ 滚轮整页步进 + PageIndex/ScrollToPage/PageChanged API 面。
+     判据 = 肉眼强信号（拖 1/3 吸附翻页/慢拖回位/快甩只翻一页/首末拉不动回弹/
+     一滚一页/dots 高亮跳变/读数翻转）。素材用程序生成测试卡（纯色+大页码），
+     不用带透明 padding 的游戏美术图。 */
+  .root {display:flex; width:100vw; height:100vh; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background-color:#0e1620; flex-direction:row; }
+  .sidebar {display:flex;flex-direction:column; width:239px; background-color:rgba(21,36,51,0.72); padding:32px 20px; gap:6px; border-width:0 1px 0 0; border-style:solid; border-color:#2a5a75; }
+  .side-back { color:#8ec5d8; font-size:14px; margin-bottom:20px; }
+  .side-title { color:#e0e6ec; font-size:22px; font-weight:700; margin-bottom:8px; }
+  .side-desc { color:#6c7080; font-size:12px; margin-bottom:20px; }
+  .readout-label { color:#6c7080; font-size:12px; margin-top:14px; }
+  .readout { color:#8ec5d8; font-size:15px; }
+  .api-row {display:flex; flex-direction:row; gap:10px; margin-top:18px; }
+  .api-btn { color:#e0e6ec; font-size:13px; padding:8px 14px; border-radius:8px; background-color:rgba(26,47,69,0.85); border-width:0 0 0 2px; border-style:solid; border-color:#2a5a75; }
+  .api-btn:hover { border-color:#5fb4d4; color:#5fb4d4; }
+  /* ── 消费面 ──（直接子 flex-shrink:0：防 Chrome 对 overflow:auto 项 min-height
+     解析为 0 压扁定高子——shape-mask 同款 preview/运行时一致性） */
+  .sw-page {display:flex;flex-direction:column; flex-grow:1; padding:48px; gap:14px; overflow:auto; }
+  .main-title, .section-label, .sw-banner, .sw-dots-row, .sw-api-row, .sw-center, .sw-hint { flex-shrink:0; }
+  .main-title { color:#e0e6ec; font-size:36px; font-weight:700; }
+  .section-label { color:#6c7080; font-size:13px; margin-top:12px; }
+  /* A 主 banner：4 页横滑。判据：拖过 1/3 翻页、慢拖(<1/3)回位、快甩只翻一页、
+     首末页拉不动（回弹）、滚轮一滚一页。页卡 = 纯色测试卡 + 大页码。 */
+  .sw-banner {display:flex;flex-direction:row; width:720px; height:300px; overflow-x:scroll; scroll-snap-type:x mandatory; border-radius:14px; }
+  .sw-card {display:flex;flex-direction:column; align-items:center; justify-content:center; width:720px; height:300px; flex-shrink:0; scroll-snap-align:start; }
+  .sw-card-num { color:#e0e6ec; font-size:96px; font-weight:700; }
+  .sw-card-tag { color:rgba(224,230,236,0.72); font-size:16px; margin-top:8px; }
+  .sw-card-1 { background-color:#2a5a75; }
+  .sw-card-2 { background-color:#7a4a9a; }
+  .sw-card-3 { background-color:#a04a5a; }
+  .sw-card-4 { background-color:#3a7a4a; }
+  /* B dots 指示器：PageChanged 驱动 .sw-dot-on 高亮（运行时类切换）。判据：翻页后
+     高亮跳变到当前页、与页卡大数字一致。 */
+  .sw-dots-row {display:flex; flex-direction:row; gap:12px; align-items:center; }
+  .sw-dot { width:12px; height:12px; border-radius:6px; background-color:#2a5a75; }
+  .sw-dot-on { width:28px; background-color:#f39c12; }
+  /* C API 区：ScrollToPage 重载粒度（Smooth ±1 / Instant 边界页）+ 读数
+     （PageIndex / PageChanged 计数与最近页——事件路由证据）。 */
+  .sw-api-row {display:flex; flex-direction:row; gap:12px; align-items:center; }
+  /* D center 对照：3 窄卡 center 吸附。判据：滚动停时中卡完整居中、邻卡露边；
+     与 A 的 start 对齐（页首对齐）形成 align 语义对照。 */
+  .sw-center {display:flex;flex-direction:row; width:360px; height:160px; overflow-x:scroll; scroll-snap-type:x mandatory; border-radius:12px; }
+  .sw-c-card {display:flex; align-items:center; justify-content:center; width:200px; height:160px; flex-shrink:0; scroll-snap-align:center; border-radius:10px; }
+  .sw-c-card-num { color:#e0e6ec; font-size:40px; font-weight:700; }
+  .sw-c-1 { background-color:#2a5a75; }
+  .sw-c-2 { background-color:#7a4a9a; }
+  .sw-c-3 { background-color:#a04a5a; }
+  .sw-hint { color:#6c7080; font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="root">
+    <div class="sidebar">
+      <button class="side-back" id="back-home">← 返回首页</button>
+      <div class="side-title">swipe</div>
+      <div class="side-desc">scroll-snap 翻页 · #59 批1</div>
+      <div class="readout-label">当前页（PageIndex）</div>
+      <div class="readout" id="sw-idx">0</div>
+      <div class="readout-label">PageChanged 计数 / 最近页</div>
+      <div class="readout" id="sw-evcount">0 / –</div>
+      <div class="api-row">
+        <button class="api-btn" id="sw-back">Smooth ‑1</button>
+        <button class="api-btn" id="sw-fwd">Smooth +1</button>
+      </div>
+      <div class="api-row">
+        <button class="api-btn" id="sw-home">Instant 首页</button>
+        <button class="api-btn" id="sw-end">Instant 末页</button>
+      </div>
+    </div>
+    <div class="sw-page">
+      <div class="main-title">swipe · 滑动翻页</div>
+      <div class="section-label">A — 拖动横滑（拖过 1/3 翻页 / 快甩只翻一页 / 首末拉不动）</div>
+      <div class="sw-banner" id="sw-banner">
+        <div class="sw-card sw-card-1"><span class="sw-card-num">1</span><span class="sw-card-tag">测试卡 · start 对齐</span></div>
+        <div class="sw-card sw-card-2"><span class="sw-card-num">2</span><span class="sw-card-tag">测试卡 · start 对齐</span></div>
+        <div class="sw-card sw-card-3"><span class="sw-card-num">3</span><span class="sw-card-tag">测试卡 · start 对齐</span></div>
+        <div class="sw-card sw-card-4"><span class="sw-card-num">4</span><span class="sw-card-tag">测试卡 · start 对齐</span></div>
+      </div>
+      <div class="sw-dots-row">
+        <span class="sw-dot sw-dot-on" id="sw-dot-0"></span>
+        <span class="sw-dot" id="sw-dot-1"></span>
+        <span class="sw-dot" id="sw-dot-2"></span>
+        <span class="sw-dot" id="sw-dot-3"></span>
+      </div>
+      <div class="section-label">B — 程序翻页按钮见左栏（读数翻转 = API 通路）</div>
+      <div class="section-label">C — center 对齐（停时中卡完整居中、邻卡露边）</div>
+      <div class="sw-center">
+        <div class="sw-c-card sw-c-1"><span class="sw-c-card-num">一</span></div>
+        <div class="sw-c-card sw-c-2"><span class="sw-c-card-num">二</span></div>
+        <div class="sw-c-card sw-c-3"><span class="sw-c-card-num">三</span></div>
+      </div>
+      <div class="sw-hint">滚轮在 banner 上 = 一滚一页（snap 容器滚轮整页步进）</div>
+    </div>
+  </div>
+</body>
+</html>

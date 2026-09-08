@@ -15,6 +15,7 @@ pub mod pipeline;
 pub mod projected_check;
 pub mod rich_text_classify;
 pub mod schema;
+pub mod snap_check;
 pub mod structural;
 pub mod tree_builder;
 pub mod value_check;

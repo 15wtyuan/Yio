@@ -49,6 +49,9 @@ namespace Yio.HeadlessTests
             // Tree branch 条目展开/折叠（#8）。payload=新态（touch_id 1/0）——TreeItem.ExpandedChanged
             // 订阅翻译为公共 ExpandChangedEvent。
             typeof(ControlExpandChangedEvent),
+            // 滚动吸附页落定（#59）。payload=落定页码（touch_id:i32）——Node.PageChanged
+            // 订阅翻译为公共 PageChangedEvent。
+            typeof(ControlPageChangedEvent),
         };
 
         // 每个结构体映射到期望的 EventType 字节值见 EventTypeCases（xUnit MemberData 须 static，

@@ -1380,6 +1380,19 @@ namespace Yio.Bindings
         internal static extern void yio_stage_get_scroll_pos(StageHandle* h, ulong node_id, float* out_x, float* out_y);
 
         /// <summary>
+        ///  读当前吸附页码（#59）。非 snap 容器/无吸附点/无效 node → out 填 -1（不 panic）。
+        /// </summary>
+        [DllImport(__DllName, EntryPoint = "yio_stage_get_page_index", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern void yio_stage_get_page_index(StageHandle* h, ulong node_id, int* out_index);
+
+        /// <summary>
+        ///  程序翻页（#59）。index clamp 进吸附点集；非 snap 容器 no-op。animated: u8
+        /// （0=瞬移 1=缓动）。null 句柄 → no-op。
+        /// </summary>
+        [DllImport(__DllName, EntryPoint = "yio_stage_scroll_to_page", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern void yio_stage_scroll_to_page(StageHandle* h, ulong node_id, int index, byte animated);
+
+        /// <summary>
         ///  注册 tween（spec 形态）。start/end 指向 ≥value_size 个 f32（value_size 由 prop
         ///  隐含）。null 句柄/spec/null 指针 / 越界 prop/ease → no-op。
         ///  Width/Height 载荷第 2 槽是域码（LenDomain 判别值，双端必须同域）——不一致 → no-op

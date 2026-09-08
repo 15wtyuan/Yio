@@ -155,7 +155,10 @@ public class Container : Node {
     public YioVector2 ScrollPos { get; }                    // (0,0) on non-scrolling
     public void RestartAnimations();                     // rebuild declarative players on this node AND its subtree; programmatic (Play) players untouched; node state kept
     public void ScrollTo(YioVector2 pos, ScrollBehavior behavior = ScrollBehavior.Smooth);
+    public int PageIndex { get; }                        // nearest snap page on a scroll-snap container (declared via CSS `scroll-snap-type`); -1 when not a snap container / no snap points
+    public void ScrollToPage(int index, ScrollBehavior behavior = ScrollBehavior.Smooth);  // programmatic page flip; index is clamped into the snap-point set; no-op on non-snap containers; PageChanged fires on settle
     public event Action<ScrollChangedEvent> Scrolled;
+    public event Action<PageChangedEvent> PageChanged;  // snap page settled (drag crossing pages does NOT fire per-page — one event on settle; initial page settles on the first frame; programmatic flips fire too)
     public UITemplate GetTemplate(string name);
 }
 ```

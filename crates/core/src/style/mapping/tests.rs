@@ -2568,3 +2568,50 @@ fn apply_decl_clip_path_roundtrip() {
         "域外值 false"
     );
 }
+
+// ── #59 scroll-snap 声明映射 ────────────────────────────────────────────
+
+#[test]
+fn apply_decl_scroll_snap_type_and_align() {
+    let mut s = crate::style::resolved::ResolvedStyle::default();
+    assert_eq!(
+        s.scroll_snap_type,
+        crate::style::resolved::SnapTypeMode::None
+    );
+    assert_eq!(s.scroll_snap_align, crate::style::resolved::SnapAlign::None);
+
+    assert!(apply_decl(&mut s, "scroll-snap-type", "x mandatory"));
+    assert_eq!(
+        s.scroll_snap_type,
+        crate::style::resolved::SnapTypeMode::XMandatory
+    );
+    assert!(apply_decl(&mut s, "scroll-snap-type", "y mandatory"));
+    assert_eq!(
+        s.scroll_snap_type,
+        crate::style::resolved::SnapTypeMode::YMandatory
+    );
+    assert!(apply_decl(&mut s, "scroll-snap-type", "none"));
+    assert_eq!(
+        s.scroll_snap_type,
+        crate::style::resolved::SnapTypeMode::None
+    );
+
+    assert!(apply_decl(&mut s, "scroll-snap-align", "start"));
+    assert_eq!(
+        s.scroll_snap_align,
+        crate::style::resolved::SnapAlign::Start
+    );
+    assert!(apply_decl(&mut s, "scroll-snap-align", "center"));
+    assert_eq!(
+        s.scroll_snap_align,
+        crate::style::resolved::SnapAlign::Center
+    );
+    assert!(apply_decl(&mut s, "scroll-snap-align", "end"));
+    assert_eq!(s.scroll_snap_align, crate::style::resolved::SnapAlign::End);
+
+    // 非法值拒绝（返 false，不改字段）——围栏报 FenceBadCssValue 引导修正。
+    assert!(!apply_decl(&mut s, "scroll-snap-type", "x"));
+    assert!(!apply_decl(&mut s, "scroll-snap-type", "x proximity"));
+    assert!(!apply_decl(&mut s, "scroll-snap-align", "middle"));
+    assert_eq!(s.scroll_snap_align, crate::style::resolved::SnapAlign::End);
+}

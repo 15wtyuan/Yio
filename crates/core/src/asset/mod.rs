@@ -51,13 +51,13 @@ use crate::style::resolved::ResolvedStyle;
 use crate::tween::{ease_from_ffi, Ease};
 
 pub const PKG_MAGIC: u32 = 0x474B5059; // 磁盘字节(LE) "YPKG"（不与 frame blob "YIO1" 撞）。
-pub const PKG_FORMAT_VERSION: u32 = 58; // v58: 项目更名 Ikat→Yio，pkg 磁盘魔数 LPKG→YPKG（格式身份换血，旧包全部拒）。v57: 并行撞号合并批——#52 ResolvedStyle 加 clip_path（shape mask circle()/polygon() 声明面）+ #57 Compound 加 part（::part(name) 页面规则穿组件内容墙通道，选择器 IR 进 pkg 序列化），两批各自宣称 v56 布局互斥，合并后双改同版升 57（双方旧 v56 包都拒）。v56（未发布，从未进 tag——两分支各自的中间态，无消费者）：Compound 加 part（#57）。v56-并行（同上未发布）：ResolvedStyle 加 clip_path（#52）。v55: ResolvedStyle 加 deferred_inline（#11 custom props——行内 `--x: val` 与含 var() 的行内值延迟解析声明面，bincode 布局变，旧包拒绝）。
+pub const PKG_FORMAT_VERSION: u32 = 59; // v59: ResolvedStyle 加 scroll_snap_type/scroll_snap_align 两字段（#59 swipe 滑动翻页声明面，bincode 布局变，旧包拒绝）。v58: 项目更名 Ikat→Yio，pkg 磁盘魔数 LPKG→YPKG（格式身份换血，旧包全部拒）。v57: 并行撞号合并批——#52 ResolvedStyle 加 clip_path（shape mask circle()/polygon() 声明面）+ #57 Compound 加 part（::part(name) 页面规则穿组件内容墙通道，选择器 IR 进 pkg 序列化），两批各自宣称 v56 布局互斥，合并后双改同版升 57（双方旧 v56 包都拒）。v56（未发布，从未进 tag——两分支各自的中间态，无消费者）：Compound 加 part（#57）。v56-并行（同上未发布）：ResolvedStyle 加 clip_path（#52）。v55: ResolvedStyle 加 deferred_inline（#11 custom props——行内 `--x: val` 与含 var() 的行内值延迟解析声明面，bincode 布局变，旧包拒绝）。
                                         // MIN 必须随 bump 同拍（历史不变量：每版都改 bincode 布局，旧包解不动）。MIN
                                         // 落后会让旧版包漏过版本门、以 Bincode 结构错配炸成「malformed」（rc -1 无指引），
                                         // 而非 TooOld 的「Unity 包与 yio.exe 同版本重打」专属文案——v48 bump 漏拍 MIN 的
                                         // 实证（0.0.16 起 CI 红）。护栏：asset/tests 的 min_version_tracks_current。
-pub(crate) const MIN_VERSION: u32 = 58;
-pub(crate) const MAX_VERSION: u32 = 58;
+pub(crate) const MIN_VERSION: u32 = 59;
+pub(crate) const MAX_VERSION: u32 = 59;
 const NULL_IDX: u16 = 0xFFFF;
 
 /// 一个已加载的包（资源池条目）。`name` read 时填空串，由 `Stage::load_package(name, ..)` 覆盖。
