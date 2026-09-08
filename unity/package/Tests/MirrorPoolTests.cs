@@ -134,7 +134,7 @@ namespace Yio.Tests
                     sortKey: 0, payloadKind: 1, changeLevel: 2, reuseKey: 5));
                 Assert.AreEqual(1, blob1.NodeCount, "blob1 NodeCount=1");
                 Assert.AreEqual(5u, blob1.ReuseKey(0), "blob1 reuse_key=5");
-                pool.Sync(blob1, root.transform, mm, null, fallback);
+                pool.Sync(blob1, root.transform, new UnityMirrorHost(mm, null, fallback));
 
                 Assert.AreEqual(1, pool.Count, "帧1: pool.Count=1");
                 Assert.AreEqual(1, root.transform.childCount, "帧1: 1 子 GO");
@@ -147,7 +147,7 @@ namespace Yio.Tests
                 Assert.AreEqual(1, blob2.NodeCount, "blob2 NodeCount=1");
                 Assert.AreEqual(200ul, blob2.NodeId(0), "blob2 node_id=200");
                 Assert.AreEqual(5u, blob2.ReuseKey(0), "blob2 reuse_key=5");
-                pool.Sync(blob2, root.transform, mm, null, fallback);
+                pool.Sync(blob2, root.transform, new UnityMirrorHost(mm, null, fallback));
 
                 // 复用验证
                 Assert.AreEqual(1, pool.Count, "帧2: pool.Count 仍=1（复用，非新建）");
@@ -207,7 +207,7 @@ namespace Yio.Tests
                     id: 100, x: 10f, y: 20f, w: w, h: h, sortKey: 0,
                     payloadKind: 1, changeLevel: 2, reuseKey: 0,
                     ma: ma, mb: mb, mc: mc, md: md)),
-                    root.transform, mm, null, fallback);
+                    root.transform, new UnityMirrorHost(mm, null, fallback));
                 var mesh = root.transform.GetChild(0).GetComponent<MeshFilter>().sharedMesh;
                 var b1 = mesh.bounds;
                 Assert.AreEqual(expectCenter.x, b1.center.x, 1e-4f, "帧1 center.x == AABB(L·B)");
@@ -222,7 +222,7 @@ namespace Yio.Tests
                         id: 100, x: 10f + frame * 7f, y: 20f, w: w, h: h, sortKey: 0,
                         payloadKind: 1, changeLevel: 1, reuseKey: 0,
                         ma: ma, mb: mb, mc: mc, md: md)),
-                        root.transform, mm, null, fallback);
+                        root.transform, new UnityMirrorHost(mm, null, fallback));
                     var bn = root.transform.GetChild(0).GetComponent<MeshFilter>().sharedMesh.bounds;
                     Assert.AreEqual(b1.center.x, bn.center.x, 1e-5f,
                         $"帧{frame} center.x 不得漂移（Header 帧重复补偿 = 叠加）");
@@ -387,7 +387,7 @@ namespace Yio.Tests
                 Assert.AreEqual(1u, blob.PathIdx(0), "path_idx=1");
                 Assert.AreEqual("sprites/test", blob.ReadPath(1u), "path resolves");
 
-                pool.Sync(blob, root.transform, mm, sprites, Texture2D.whiteTexture);
+                pool.Sync(blob, root.transform, new UnityMirrorHost(mm, sprites, Texture2D.whiteTexture));
 
                 Assert.AreEqual(1, root.transform.childCount, "1 child GO");
                 var mf = root.transform.GetChild(0).GetComponent<MeshFilter>();
@@ -614,7 +614,7 @@ namespace Yio.Tests
                 var blob1 = new FrameBlob(BuildV14Blob(
                     (0x01, nodeId: 100, reuseKey: 5)));
                 Assert.That(blob1.IsValid, Is.True, "v14 blob valid");
-                pool.Sync(blob1, root.transform, mm, null, fallback);
+                pool.Sync(blob1, root.transform, new UnityMirrorHost(mm, null, fallback));
                 Assert.That(pool.Count, Is.EqualTo(1), "frame1: GO created");
 
                 // Get the GO via reflection
@@ -633,7 +633,7 @@ namespace Yio.Tests
                 Assert.That(blob2.IsValid, Is.True);
                 Assert.That(blob2.Parked(0), Is.True, "blob2.Parked=true");
                 Assert.That(blob2.Visible(0), Is.False, "blob2.Visible=false");
-                pool.Sync(blob2, root.transform, mm, null, fallback);
+                pool.Sync(blob2, root.transform, new UnityMirrorHost(mm, null, fallback));
 
                 Assert.That(pool.Count, Is.EqualTo(1), "frame2: GO kept, not destroyed");
                 Assert.That(go.activeSelf, Is.False, "frame2: GO SetActive(false)");
@@ -660,7 +660,7 @@ namespace Yio.Tests
                 // Frame 1: active → creates GO
                 pool.Sync(new FrameBlob(BuildV14Blob(
                     (0x01, nodeId: 100, reuseKey: 5))),
-                    root.transform, mm, null, fallback);
+                    root.transform, new UnityMirrorHost(mm, null, fallback));
                 Assert.That(pool.Count, Is.EqualTo(1));
 
                 // Get GO reference
@@ -675,14 +675,14 @@ namespace Yio.Tests
                 // Frame 2: parked → GO kept, inactive
                 pool.Sync(new FrameBlob(BuildV14Blob(
                     (0x02, nodeId: 100, reuseKey: 5))),
-                    root.transform, mm, null, fallback);
+                    root.transform, new UnityMirrorHost(mm, null, fallback));
                 Assert.That(pool.Count, Is.EqualTo(1), "parked: GO kept");
                 Assert.That(go.activeSelf, Is.False, "parked: GO inactive");
 
                 // Frame 3: reactivated → GO SetActive(true) again
                 pool.Sync(new FrameBlob(BuildV14Blob(
                     (0x01, nodeId: 200, reuseKey: 5))),
-                    root.transform, mm, null, fallback);
+                    root.transform, new UnityMirrorHost(mm, null, fallback));
                 Assert.That(pool.Count, Is.EqualTo(1), "reactivate: GO still kept");
                 Assert.That(go.activeSelf, Is.True, "reactivate: GO active again");
             }
@@ -709,7 +709,7 @@ namespace Yio.Tests
                 var blob = new FrameBlob(BuildV14Blob(
                     (0x02, nodeId: 100, reuseKey: 5)));
                 Assert.That(blob.IsValid, Is.True);
-                pool.Sync(blob, root.transform, mm, null, fallback);
+                pool.Sync(blob, root.transform, new UnityMirrorHost(mm, null, fallback));
 
                 Assert.That(pool.Count, Is.EqualTo(0), "lazy: no GO created for parked-only entry");
                 Assert.That(root.transform.childCount, Is.EqualTo(0), "no child GO");
@@ -736,12 +736,12 @@ namespace Yio.Tests
                 // Frame 1: active → creates GO
                 var blobActive = new FrameBlob(BuildV14Blob(
                     (0x01, nodeId: 100, reuseKey: 5)));
-                pool.Sync(blobActive, root.transform, mm, null, fallback);
+                pool.Sync(blobActive, root.transform, new UnityMirrorHost(mm, null, fallback));
                 Assert.That(pool.Count, Is.EqualTo(1), "frame1: GO created");
                 var go1 = root.transform.GetChild(0).gameObject;
 
                 // Frame 2: same active entry, change_level=2 again (steady state)
-                pool.Sync(blobActive, root.transform, mm, null, fallback);
+                pool.Sync(blobActive, root.transform, new UnityMirrorHost(mm, null, fallback));
 
                 Assert.That(pool.Count, Is.EqualTo(1), "frame2: still 1 GO");
                 Assert.That(root.transform.childCount, Is.EqualTo(1), "frame2: still 1 child");

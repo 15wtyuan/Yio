@@ -24,6 +24,7 @@ namespace Yio
     public sealed unsafe class UnityYioBackend : YioBackend, IDisposable
     {
         readonly MirrorPool _pool = new();
+        readonly UnityMirrorHost _mirror;    // 引擎无关镜像策略（_pool）的 Unity 实现
         MaterialManager _mm;                 // ctgfx 程序化 material 缓存（Shader Find 后注入）
         readonly NativeHostManager _nhm = new();
         internal SpriteResolver _sprites = new();  // YioHost InitSprites/SetImageSizes 资源注册用
@@ -40,6 +41,7 @@ namespace Yio
         {
             _mm = mm;
             _resourceHost = resourceHost;
+            _mirror = new UnityMirrorHost(mm, _sprites, Texture2D.whiteTexture);
         }
 
         /// <summary>A4 输入路由门：Driver 每帧下发（hub 独占路由结果）。false = CollectInput no-op。</summary>
@@ -48,7 +50,7 @@ namespace Yio
         /// <summary>A4 排序基址下发：MirrorPool 与 NativeHost 的 sortingOrder 同源偏移。</summary>
         internal void SetSortBase(int sortBase)
         {
-            _pool.SortBase = sortBase;
+            _mirror.SortBase = sortBase;
             _nhm.SortBase = sortBase;
         }
 
@@ -58,7 +60,7 @@ namespace Yio
 
         /// <summary>C8 解除挂载容器（镜像 GO 先行挂回屏幕 root，容器销毁归 Driver）。</summary>
         internal void ClearMountContainer(ulong slot) =>
-            _pool.ClearMountContainer(slot, _renderRoot);
+            _pool.ClearMountContainer(slot, _renderRoot, _mirror);
 
         /// <summary>
         /// Driver Awake 注入：渲染根（MirrorPool / NativeHost 镜像 GO 挂此 root）+ 输入采集器。
@@ -136,7 +138,7 @@ namespace Yio
 
             SyncFontAtlas(h);
             // v10：不再传字体表（核心自产 atlas，后端不再光栅化文本）。
-            _pool.Sync(blob, _renderRoot, _mm, _sprites, Texture2D.whiteTexture);
+            _pool.Sync(blob, _renderRoot, _mirror);
             _nhm.Sync(h);
         }
 
@@ -215,7 +217,7 @@ namespace Yio
         }
 
         /// <summary>诊断：dump 当前 MirrorPool GO 状态（Unity 渲染视角）。</summary>
-        public string DumpMirrorState() => _pool?.DumpState() ?? "(pool null)";
+        public string DumpMirrorState() => _mirror?.DumpState(_pool) ?? "(pool null)";
 
         /// <summary>
         /// 诊断：dump 当前 blob 每个渲染节点（core 视角）：node_id + world_matrix tx/ty +

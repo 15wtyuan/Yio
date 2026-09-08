@@ -36,6 +36,7 @@
          tests/dotnet/Stubs/UnityEngine.cs 假类型圆谎）。 -->
     <Compile Include="..\..\..\unity\package\Runtime\Core\Host\*.cs" Link="Host\%(Filename)%(Extension)" />
     <Compile Include="..\..\..\unity\package\Runtime\Core\FrameBlob.cs" Link="FrameBlob.cs" />
+    <Compile Include="..\..\..\unity\package\Runtime\Core\Render\*.cs" Link="Render\%(Filename)%(Extension)" />
     <Compile Include="..\..\..\unity\package\Runtime\Core\YioManifests.cs" Link="YioManifests.cs" />
     <!-- csbindgen P/Invoke 声明（Native）+ 手补 #[repr(C)] 镜像 struct（PointerEvent/KeyEvent/WheelEvent）。
          YioBindings.cs 引用后三者作 *PointerEvent 等参数类型，必须一并编进同一程序集。 -->

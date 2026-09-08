@@ -140,7 +140,7 @@ namespace Yio
                 Assert.AreEqual(546f, en.W, 0.01f);
                 Assert.AreEqual(16f, en.H, 0.01f);
 
-                pool.Sync(blob, root.transform, mm, null, fallback);
+                pool.Sync(blob, root.transform, new UnityMirrorHost(mm, null, fallback));
 
                 var mr = root.transform.GetChild(0).GetComponent<MeshRenderer>();
                 var mat = mr.sharedMaterial;
