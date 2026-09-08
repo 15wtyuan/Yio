@@ -351,6 +351,49 @@ namespace Yio
         }
 
         /// <summary>
+        /// 建场景根（kind=div Container）并写 ctx._rootId。幂等（已建则跳过）。
+        /// 引导期（集成层 Awake/boot 尾）调一次；<see cref="Instantiate"/> 内部也会确保。
+        /// </summary>
+        /// <exception cref="InvalidOperationException">create_root 失败（stage 已释放 / kind 非 UTF-8）。</exception>
+        public void EnsureSceneRoot()
+        {
+            if (_stage == null) return;
+            var ctx = _ctx;
+            if (ctx._rootId != Node.RootSentinel) return;
+
+            byte[] kind = Encoding.UTF8.GetBytes("div");
+            ulong rootId;
+            fixed (byte* kp = kind)
+                rootId = Native.yio_stage_create_root(_stage, kp, (nuint)kind.Length, null, 0);
+            if (rootId == Node.RootSentinel)
+                throw new InvalidOperationException("create_root failed (stage disposed / kind non-UTF-8)");
+            ctx._rootId = rootId;
+        }
+
+        /// <summary>
+        /// 实例化模板组件挂到场景根下（引擎无关便捷封装：ensure root → instantiate FFI →
+        /// typed 包装 + eager 组件物化 → append 到 <see cref="UIContext.Root"/>）。
+        /// pkgName 必须已 LoadPackage；compPath 是 HTML 文件主干名（去 .html）。
+        /// </summary>
+        /// <exception cref="UIPackageException">pkg 未加载 / 组件不存在 / 场景未建。</exception>
+        public Container Instantiate(string pkgName, string compPath)
+        {
+            if (_stage == null)
+                throw new InvalidOperationException("Instantiate called on disposed YioHost");
+            if (string.IsNullOrEmpty(pkgName)) throw new ArgumentNullException(nameof(pkgName));
+            if (string.IsNullOrEmpty(compPath)) throw new ArgumentNullException(nameof(compPath));
+
+            EnsureSceneRoot();
+            Container inst = UITemplate.DoInstantiate(_ctx, pkgName, compPath);
+
+            int rc = Native.yio_stage_append_child(_stage, _ctx._rootId, inst._id);
+            if (rc != 0)
+                RuntimeWarning?.Invoke(
+                    $"append_child(sceneRoot, {pkgName}/{compPath}) failed rc={rc} (child may have existing parent)");
+            return inst;
+        }
+
+        /// <summary>
         /// 释放 Stage 句柄（Rust 侧 drop Stage + 拥有的所有内存：scene/atlas/tween table）。
         /// 引擎资源（MirrorPool GO/MaterialManager 等）归 backend 自管，本方法不递归——
         /// Driver.OnDestroy 调本方法后，backend 资源由 Driver 额外清理（或 backend 自己 Dispose）。

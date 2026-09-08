@@ -252,27 +252,11 @@ namespace Yio
 
         /// <summary>
         /// Merge all atlas manifests' sprite entries into a deduplicated list of (key, width, height).
-        /// Pure function — testable without Unity runtime.
-        /// Deduplication: first occurrence wins (atlases ordered by manifest list order).
+        /// 纯函数已移引擎无关层（<see cref="YioBootstrapper.MergeSpriteSizes"/>）——此处保留
+        /// 同名转发防既有调用方断链。
         /// </summary>
         public static List<(string key, uint w, uint h)> MergeSpriteSizes(List<AtlasManifest> atlases)
-        {
-            var result = new List<(string, uint, uint)>();
-            if (atlases == null) return result;
-            var seen = new HashSet<string>();
-            foreach (var atlas in atlases)
-            {
-                if (atlas?.sprites == null) continue;
-                foreach (var kv in atlas.sprites)
-                {
-                    if (!seen.Add(kv.Key)) continue;
-                    var orig = kv.Value.orig;
-                    if (orig == null || orig.Length < 2) continue;
-                    result.Add((kv.Key, (uint)orig[0], (uint)orig[1]));
-                }
-            }
-            return result;
-        }
+            => YioBootstrapper.MergeSpriteSizes(atlases);
 
         void Awake()
         {
@@ -363,64 +347,28 @@ namespace Yio
             _backend.NativeHost.Init(transform);
 
             // 1. runtime manifest 已在 Awake 头部读取（design/match_mode 解析早于 stage 构造）。
+            // 2-4. 引导序列走引擎无关 YioBootstrapper（packages → atlas manifests → image sizes；
+            //      产物目录布局契约单点化）。加载钩子 = 本 Driver 的 virtual LoadTextFile/LoadBytes
+            //      （消费者 AB/Addressables 覆写链继续生效）。
             if (runtime != null)
             {
-                // 2. Load packages（UIContext.LoadPackage typed path）
-                foreach (var pkgName in runtime.packages)
-                {
-                    byte[] bytes = LoadPackageBytes(pkgName);
-                    if (bytes != null && bytes.Length > 0)
-                        _host.Context.LoadPackage(pkgName, bytes);
-                    else
-                        Debug.LogWarning($"[YioStageDriver] Package not found: ui/{pkgName}.pkg.bin");
-                }
-
-                // 3. Load atlas manifests
-                var atlasManifests = new List<AtlasManifest>();
-                foreach (var atlasName in runtime.atlases)
-                {
-                    string atlasJson = LoadTextFile($"atlas/{atlasName}.atlas.json");
-                    if (string.IsNullOrEmpty(atlasJson))
-                    {
-                        Debug.LogWarning($"[YioStageDriver] atlas.json not found: atlas/{atlasName}.atlas.json");
-                        continue;
-                    }
-                    try { atlasManifests.Add(AtlasManifest.ParseAtlas(atlasJson)); }
-                    catch (Exception e) { Debug.LogWarning($"[YioStageDriver] Failed to parse atlas/{atlasName}.atlas.json: {e.Message}"); }
-                }
-
-                // 4. Push image sizes to Rust core (one FFI call, before first tick)
-                if (atlasManifests.Count > 0)
-                {
-                    var sizes = MergeSpriteSizes(atlasManifests);
-                    if (sizes.Count > 0)
-                    {
-                        int n = sizes.Count;
-                        var paths = new string[n];
-                        var ws = new uint[n];
-                        var hs = new uint[n];
-                        for (int i = 0; i < n; i++)
-                        {
-                            paths[i] = sizes[i].key;
-                            ws[i] = sizes[i].w;
-                            hs[i] = sizes[i].h;
-                        }
-                        _host.SetImageSizes(paths, ws, hs);
-                    }
-                }
+                var boot = new YioBootstrapper(_host, new DriverLoadSource(this),
+                    msg => Debug.LogWarning($"[YioStageDriver] {msg}"));
+                var bootResult = boot.Boot(runtime);
 
                 // 5. Init SpriteResolver with atlas manifests + lazy page loader
-                //    Unity 特定资源 IO（Texture2D）——归 UnityYioBackend，不进引擎无关 YioHost。
-                _backend.InitSprites(atlasManifests, pageName => LoadTexture($"atlas/{pageName}"));
+                //    Unity 特定资源 IO（Texture2D）——归 UnityYioBackend，不进引擎无关层。
+                _backend.InitSprites(bootResult.Atlases, pageName => LoadTexture($"atlas/{pageName}"));
 
-                // 6. Register fonts from runtime manifest
-                RegisterFontsFromManifest(runtime);
+                // 6. Register fonts from runtime manifest（共享宿主守卫是引擎资源层语义，留本层）
+                RegisterFontsFromManifest(runtime, boot);
             }
 
             // 7. Create scene root（必须 step——instantiate/cascade/solve 都依赖 scene 存在）。
             //    围栏闭合下根节点 kind=Container（div）。设 ctx._rootId 让 ctx.Root 公共入口可用——
             //    业务代码（runner）通过 ctx.Root 拿 typed Container 做挂子 / 查询。
-            EnsureSceneRoot();
+            try { EnsureSceneRoot(); }
+            catch (Exception e) { Debug.LogError($"[YioStageDriver] {e.Message}"); }
 
             EnsureCamera();
             ConfigureTransforms();
@@ -429,73 +377,49 @@ namespace Yio
         }
 
         /// <summary>
-        /// 建场景根（kind=div Container）并写 ctx._rootId。Awake 末尾调一次；多次调幂等（_rootId
-        /// 已设则跳过）。create_root 失败（Rust 侧 stage 异常）只 LogError——后续 Instantiate 会
-        /// 因 scene 缺失返 sentinel，runner 自行处理 null。
+        /// IYioLoadSource 适配：本 Driver 的四个 public virtual 加载钩子
+        /// （LoadTextFile/LoadBytes/LoadPackageBytes/LoadFontBytes——消费者覆写链的锚点）。
         /// </summary>
-        unsafe void EnsureSceneRoot()
+        sealed class DriverLoadSource : IYioLoadSource
         {
-            if (_host == null) return;
-            var ctx = _host.Context;
-            if (ctx._rootId != Node.RootSentinel) return;
-
-            StageHandle* h = (StageHandle*)_host.StagePtr.ToPointer();
-            byte[] kind = Encoding.UTF8.GetBytes("div");
-            ulong rootId;
-            fixed (byte* kp = kind)
-                rootId = Native.yio_stage_create_root(h, kp, (nuint)kind.Length, null, 0);
-            if (rootId == Node.RootSentinel)
-            {
-                Debug.LogError("[YioStageDriver] create_root failed (stage null / kind non-UTF-8)");
-                return;
-            }
-            ctx._rootId = rootId;
+            readonly YioStageDriver _d;
+            internal DriverLoadSource(YioStageDriver d) => _d = d;
+            public string ReadText(string relPath) => _d.LoadTextFile(relPath);
+            public byte[] ReadBytes(string relPath) => _d.LoadBytes(relPath);
+            public byte[] ReadPackageBytes(string pkgName) => _d.LoadPackageBytes(pkgName);
+            public byte[] ReadFontBytes(string fontFile) => _d.LoadFontBytes(fontFile);
         }
 
         /// <summary>
-        /// 实例化模板组件到当前 scene 根下。封装 FFI instantiate + typed 包装 + append 到 ctx.Root，
+        /// 建场景根（转发引擎无关 <see cref="YioHost.EnsureSceneRoot"/>）。Awake 末尾调一次；
+        /// 幂等。create_root 失败抛 InvalidOperationException——Awake 调用点 catch 后 LogError
+        /// （后续 Instantiate 因 scene 缺缺失败，runner 自行处理 null）。
+        /// </summary>
+        void EnsureSceneRoot() => _host?.EnsureSceneRoot();
+
+        /// <summary>
+        /// 实例化模板组件到当前 scene 根下（转发引擎无关 <see cref="YioHost.Instantiate"/>：
+        /// ensure root → instantiate FFI → typed 包装 + eager 组件物化 → append 到 ctx.Root）。
         /// 让业务 runner 不必直接持 UIPackage 句柄（package 已在 Awake 经 runtime.json 自动 load）。
-        /// 返回模板根的 typed Container；package 未加载 / 组件路径错 / scene 未建 → null + LogError。
+        /// 返回模板根的 typed Container；package 未加载 / 组件路径错 / scene 未建 → null + LogError
+        /// （兼容既有调用方；Godot 等新集成层可直接用 YioHost.Instantiate 拿异常语义）。
         ///
         /// pkgName 必须已在 yio.runtime.json packages 段列出（Awake 时已 load_package）。
         /// compPath 是 HTML 文件主干名（去 .html），如 workspace 下 foo.html → "foo"。
         /// </summary>
-        public unsafe Container Instantiate(string pkgName, string compPath)
+        public Container Instantiate(string pkgName, string compPath)
         {
             if (_host == null)
             {
                 Debug.LogError("[YioStageDriver] Instantiate called but host is null (Awake failed?)");
                 return null;
             }
-            EnsureSceneRoot();
-            var ctx = _host.Context;
-            if (ctx._rootId == Node.RootSentinel)
+            try { return _host.Instantiate(pkgName, compPath); }
+            catch (Exception e)
             {
-                Debug.LogError($"[YioStageDriver] Instantiate({pkgName},{compPath}) aborted: scene root not created");
+                Debug.LogError($"[YioStageDriver] Instantiate({pkgName},{compPath}) failed: {e.Message}");
                 return null;
             }
-
-            StageHandle* h = (StageHandle*)_host.StagePtr.ToPointer();
-            byte[] pb = Encoding.UTF8.GetBytes(pkgName ?? "");
-            byte[] cb = Encoding.UTF8.GetBytes(compPath ?? "");
-            ulong instId;
-            fixed (byte* pp = pb)
-            fixed (byte* cp = cb)
-                instId = Native.yio_stage_instantiate(h, pp, (nuint)pb.Length, cp, (nuint)cb.Length);
-            if (instId == Node.RootSentinel)
-            {
-                Debug.LogError($"[YioStageDriver] instantiate failed: pkg={pkgName} comp={compPath} (pkg not loaded / comp not found / scene missing)");
-                return null;
-            }
-
-            Container inst = (Container)ctx._registry.GetOrCreate(instId);
-            // eager 物化子树内注册组件（RegisterComponent：OnConnected 实例化时跑；
-            // 根自身已由上行 GetOrCreate 路由）。同 UITemplate.DoInstantiate。
-            ctx.MaterializeCustomElements(instId);
-            int rc = Native.yio_stage_append_child(h, ctx._rootId, instId);
-            if (rc != 0)
-                Debug.LogWarning($"[YioStageDriver] append_child(sceneRoot, {pkgName}/{compPath}) failed rc={rc} (child may have existing parent)");
-            return inst;
         }
 
         /// <summary>
@@ -582,28 +506,18 @@ namespace Yio
 
         /// <summary>
         /// Register fonts from the runtime manifest's font list.
-        /// Overridable for custom loading strategies.
+        /// Overridable for custom loading strategies. 字体注册循环已移引擎无关层
+        /// （<see cref="YioBootstrapper.RegisterFonts"/>）；共享宿主守卫（FontsRegistered——
+        /// 同名重注册会换 font_id + 整套字形重光栅）是引擎资源层语义，留本层。
         /// </summary>
-        protected virtual void RegisterFontsFromManifest(RuntimeManifest runtime)
+        protected virtual void RegisterFontsFromManifest(RuntimeManifest runtime, YioBootstrapper boot)
         {
             // 共享宿主守卫：同名重注册会换 font_id（native 代数失效钩触发全文本重测）
             // 且 atlas 按新 GlyphKey 重光栅整套字形（N driver × N 套字形副本）。
             // 首个挂接 Driver 的字体清单即宿主清单；差异化字体须直接操作 YioResourceHost。
             if (_sharedHost != null && _sharedHost.FontsRegistered) return;
             if (runtime?.fonts == null) return;
-            var fallbacks = new List<string>();
-            foreach (var rf in runtime.fonts)
-            {
-                if (string.IsNullOrEmpty(rf.family) || string.IsNullOrEmpty(rf.file)) continue;
-                byte[] bytes = LoadFontBytes(rf.file);
-                if (bytes != null)
-                    _host.RegisterFont(rf.family, bytes, rf.@default);
-                // Collect fallback families (registered or not — Rust side skips unregistered).
-                if (rf.fallback)
-                    fallbacks.Add(rf.family);
-            }
-            if (fallbacks.Count > 0)
-                _host.SetFallbackFamilies(fallbacks);
+            boot.RegisterFonts(runtime);
             if (_sharedHost != null) _sharedHost.FontsRegistered = true;
         }
 
