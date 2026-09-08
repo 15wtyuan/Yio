@@ -35,6 +35,7 @@ public class ShowcaseRunner : MonoBehaviour
         ("nav-rtcss", "runtime-css"),
         ("nav-comp", "component-lab"),
         ("nav-shape", "shape-mask"),
+        ("nav-swipe", "swipe"),
         ("nav-tree", "tree"),
         ("nav-evict", "texture-lab"),
         ("nav-fx", "effects"),
@@ -1359,6 +1360,41 @@ public class ShowcaseRunner : MonoBehaviour
         }
     }
 
+    /// swipe 页（#59 批1）：scroll-snap 声明面验收。判据（肉眼强信号）：
+    /// 拖过 1/3 吸附翻页 / 慢拖回位 / 快甩只翻一页 / 首末页拉不动（回弹）/ 滚轮
+    /// 一滚一页 / dots 高亮跳变 / PageIndex 与事件计数读数翻转。
+    /// 接线：banner 容器（div→Container 对齐）PageChanged 驱动 dots 类切换 + 读数；
+    /// 按钮 = ScrollToPage 重载粒度（Smooth ±1 / Instant 边界页）。
+    /// 首帧初始页由 core 首次结算的 PageChanged 自动同步（settled_page=-1 起步）。
+    void WireSwipePage(Container page)
+    {
+        var dots = new TextElement[4];
+        for (int i = 0; i < 4; i++)
+            page.TryGet<TextElement>($"sw-dot-{i}", out dots[i]);
+        if (page.TryGet<TextElement>("sw-idx", out var idx)) idx.TextContent = "0";
+        if (page.TryGet<TextElement>("sw-evcount", out var ev)) ev.TextContent = "0 / –";
+        if (page.TryGet<Container>("sw-banner", out var banner))
+        {
+            int count = 0;
+            banner.PageChanged += e =>
+            {
+                count++;
+                if (ev != null) ev.TextContent = $"{count} / {e.PageIndex}";
+                if (idx != null) idx.TextContent = e.PageIndex.ToString();
+                for (int i = 0; i < 4; i++)
+                    dots[i]?.Classes.Set("sw-dot-on", i == e.PageIndex);
+            };
+            if (page.TryGet<Button>("sw-fwd", out var fwd))
+                fwd.Clicked += () => banner.ScrollToPage(banner.PageIndex + 1);
+            if (page.TryGet<Button>("sw-back", out var back))
+                back.Clicked += () => banner.ScrollToPage(banner.PageIndex - 1);
+            if (page.TryGet<Button>("sw-end", out var end))
+                end.Clicked += () => banner.ScrollToPage(3, ScrollBehavior.Instant);
+            if (page.TryGet<Button>("sw-home", out var home))
+                home.Clicked += () => banner.ScrollToPage(0, ScrollBehavior.Instant);
+        }
+    }
+
     /// runtime-css 页（#11）：StyleSheet.Add/Dispose/Clear + SetVar/RemoveVar + var() 消费面。
     /// 判据（肉眼强信号）：目标块变色/复原、同优先后 Add 赢、非法 CSS 异常读数带行列、
     /// chips 组整组翻色/回落、嵌套链 swatch 变色、行内源 chip 恒橙（打包期通路回归）。
@@ -1773,6 +1809,10 @@ public class ShowcaseRunner : MonoBehaviour
         if (pageName == "shape-mask")
         {
             WireShapeMaskPage(page);
+        }
+        if (pageName == "swipe")
+        {
+            WireSwipePage(page);
         }
         if (pageName == "lab")
         {

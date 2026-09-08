@@ -578,6 +578,23 @@ impl Stage {
         }
     }
 
+    /// 读当前吸附页码（#59）。非 snap 容器 / 无吸附点 → -1；越界 node → None。
+    pub fn get_page_index(&self, node: NodeId) -> Option<i32> {
+        Some(self.scene.as_ref()?.scroll.get(node)?.page_index())
+    }
+
+    /// 程序翻页（#59）。index clamp 进吸附点集范围；非 snap 容器 no-op。
+    /// animated=false 直接落位；true 启 cubic-out tween，落定后 PageChanged。
+    pub fn scroll_to_page(&mut self, node: NodeId, index: i32, animated: bool) {
+        if let Some(scene) = self.scene.as_mut() {
+            if scene.get(node).is_some() {
+                if let Some(s) = scene.scroll.get_mut(node) {
+                    s.scroll_to_page(index, animated);
+                }
+            }
+        }
+    }
+
     /// driver 注入滚动容器 content_size（虚拟列表用）。覆盖子节点 AABB 自动算。
     /// refresh_content_sizes 跳过此容器。node 无效/非滚动容器 → no-op（不 panic）。
     /// **中间态**：set 后至下次 refresh 前 viewport_size/overlap 为 (0,0)——
@@ -1420,6 +1437,8 @@ impl Stage {
             crate::scroll::apply_wheel_to_hit(scene, *w);
         }
         crate::scroll::advance_all(dt, scene);
+        // 吸附页码结算（#59）：静止 snap 容器净页变化 → PageChanged 事件。
+        crate::scroll::drain_page_events(scene, &mut out);
         // 3. 键盘事件（keydown/up + Tab 导航 + FocusIn/Out）
         let keys = std::mem::take(&mut self.pending_keys);
         crate::input::process_keys(scene, &keys, &mut out);

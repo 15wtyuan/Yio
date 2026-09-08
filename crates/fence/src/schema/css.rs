@@ -387,6 +387,26 @@ pub static CSS_PROPS: &[CssPropSpec] = &[
         inherited: false,
         parser: CssValueParser::Overflow,
     },
+    // scroll-snap-type（#59 滑动翻页）：围栏子集 `none | x mandatory | y mandatory`。
+    // 裸 x/y（strictness 缺省 = proximity）、proximity、both/block/inline 全拒——
+    // 值域即引导（FenceBadCssValue 提示写显式 mandatory 形）。两 token 值走 Raw +
+    // core parse_scroll_snap_type 定向门（transform-origin 同款单一真相源模式）。
+    // 语义挂滚动容器；声明在非滚动容器上 → check 期 warning（不吸附、不报错）。
+    CssPropSpec {
+        name: "scroll-snap-type",
+        default: "none",
+        inherited: false,
+        parser: CssValueParser::Raw,
+    },
+    // scroll-snap-align（#59）：子元素吸附点对齐位。CSS 初始值 none——未声明的子
+    // 不提供吸附点（照浏览器；容器声明 snap-type 而无子声明 align → check 期 warning
+    // 兜住常见漏写）。
+    CssPropSpec {
+        name: "scroll-snap-align",
+        default: "none",
+        inherited: false,
+        parser: CssValueParser::Keyword(&["none", "start", "center", "end"]),
+    },
     CssPropSpec {
         name: "clip-path",
         default: "none",
@@ -995,5 +1015,50 @@ mod inset_shorthand_tests {
         assert!(value_error("inset", "6").is_some());
         assert!(value_error("inset", "1px 2px 3px 4px 5px").is_some());
         assert!(value_error("inset", "1em").is_some());
+    }
+}
+
+#[cfg(test)]
+mod snap_props_tests {
+    use super::*;
+    use crate::value_check::value_error;
+
+    /// #59 scroll-snap 两属性注册 + 值域：type 收显式 mandatory 形（裸 x/y = proximity
+    /// 缺省、proximity、both 全拒）；align 单关键字。
+    #[test]
+    fn snap_props_registered() {
+        let st = find_css_prop("scroll-snap-type").expect("scroll-snap-type in fence");
+        assert_eq!(st.default, "none");
+        assert!(!st.inherited);
+        let sa = find_css_prop("scroll-snap-align").expect("scroll-snap-align in fence");
+        assert_eq!(sa.default, "none");
+        assert!(!sa.inherited);
+        assert!(matches!(
+            sa.parser,
+            CssValueParser::Keyword(&["none", "start", "center", "end"])
+        ));
+    }
+
+    #[test]
+    fn snap_type_value_forms() {
+        assert!(value_error("scroll-snap-type", "none").is_none());
+        assert!(value_error("scroll-snap-type", "x mandatory").is_none());
+        assert!(value_error("scroll-snap-type", "y mandatory").is_none());
+        // 裸轴（CSS 缺省 = proximity，围栏不收）→ 拒并引导显式 mandatory。
+        assert!(value_error("scroll-snap-type", "x").is_some());
+        assert!(value_error("scroll-snap-type", "y").is_some());
+        assert!(value_error("scroll-snap-type", "x proximity").is_some());
+        assert!(value_error("scroll-snap-type", "both mandatory").is_some());
+        assert!(value_error("scroll-snap-type", "proximity").is_some());
+    }
+
+    #[test]
+    fn snap_align_value_forms() {
+        // Keyword 域校验入口是 keyword_error（value_error 不覆盖 Keyword 路径）。
+        for ok in ["none", "start", "center", "end"] {
+            assert!(crate::value_check::keyword_error("scroll-snap-align", ok).is_none());
+        }
+        assert!(crate::value_check::keyword_error("scroll-snap-align", "middle").is_some());
+        assert!(crate::value_check::keyword_error("scroll-snap-align", "start center").is_some());
     }
 }

@@ -1533,6 +1533,55 @@ namespace Yio
             StageHandle* h = (StageHandle*)_ctx._stage.ToPointer();
             Native.yio_stage_set_scroll_pos(h, _id, p.X, p.Y, (byte)(b == ScrollBehavior.Smooth ? 1 : 0));
         }
+
+        /// 当前吸附页码（本节点为 snap 容器时；非 snap 容器/无吸附点返 -1，#59）。
+        /// CSS 层对应 <c>scroll-snap-type</c> 声明；页码 = 吸附点序（子元素
+        /// <c>scroll-snap-align</c> 提供吸附点，按文档序升序编号）。
+        public int PageIndex
+        {
+            get
+            {
+                ThrowIfDisposed();
+                StageHandle* h = (StageHandle*)_ctx._stage.ToPointer();
+                int idx = -1;
+                Native.yio_stage_get_page_index(h, _id, &idx);
+                return idx;
+            }
+        }
+
+        /// 程序翻页（snap 容器，#59）。index clamp 进吸附点集范围；非 snap 容器 no-op。
+        /// Smooth 走 ScrollPane cubic-out tween，落定后 <see cref="PageChanged"/>；
+        /// Instant 直接落位（同帧可从 <see cref="PageIndex"/> 读回）。
+        public void ScrollToPage(int index, ScrollBehavior b = ScrollBehavior.Smooth)
+        {
+            ThrowIfDisposed();
+            StageHandle* h = (StageHandle*)_ctx._stage.ToPointer();
+            Native.yio_stage_scroll_to_page(h, _id, index, (byte)(b == ScrollBehavior.Smooth ? 1 : 0));
+        }
+
+        // PageChanged：core EVT_PAGE_CHANGED@snap 容器（31，#59）。仅静止期结算净变化
+        // ——拖拽穿越页界不逐页发、落定发一次；首帧结算发初始页；程序翻页落定后同发。
+        [NonSerialized] Dictionary<Action<PageChangedEvent>, EventRegistration> _pageChangedBacking;
+        public event Action<PageChangedEvent> PageChanged
+        {
+            add
+            {
+                if (value == null) return;
+                if (_pageChangedBacking == null)
+                    _pageChangedBacking = new Dictionary<Action<PageChangedEvent>, EventRegistration>();
+                if (_pageChangedBacking.ContainsKey(value)) return;
+                var reg = On<ControlPageChangedEvent>(e => value(new PageChangedEvent { _container = this, _pageIndex = e.PageIndex }));
+                _pageChangedBacking[value] = reg;
+            }
+            remove
+            {
+                if (_pageChangedBacking != null && _pageChangedBacking.TryGetValue(value, out var reg))
+                {
+                    _pageChangedBacking.Remove(value);
+                    reg.Dispose();
+                }
+            }
+        }
         // ScrollChanged source 待补：ScrollPane 物理自维护 tween，无 borrow_scroll_events FFI。
         // defer——event 签名冻结（PublicApi 编译门已含此字段），add/remove 推后到 source 补齐。
         public event Action<ScrollChangedEvent> Scrolled;

@@ -69,5 +69,10 @@ namespace Yio
         ///（touch_id 1/0），node_id 指向 treeitem。仅净变才发（点击/键盘交互路径；程序化
         /// setter 不发）。
         ExpandChanged = 30,
+        /// 滚动吸附页落定（core EVT_PAGE_CHANGED = 31，#59）。payload = 落定页码
+        ///（touch_id:i32），node_id 指向 snap 容器（scroll-snap-type 声明元素）。
+        /// 仅静止期结算净变化：拖拽穿越页界不逐页发、落定发一次；首帧结算发初始页
+        ///（指示器 dots 初始态同步）；程序翻页（ScrollToPage）落定后同发。
+        PageChanged = 31,
     }
 }

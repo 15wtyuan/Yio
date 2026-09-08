@@ -130,6 +130,48 @@ low-level Drag events API is for **object dragging** (title bars,
 drag-to-slot), not viewport panning; reaching for it here means
 re-implementing what the scroll container already provides.
 
+## Swiping banners / page carousels (scroll-snap)
+
+Discrete pages — onboarding carousels, hero banners, tab strips with
+peeking neighbors — are a scroll container plus two declarations.
+Write **zero swipe-detection math**:
+
+```html
+<style>
+.banner { display:flex; flex-direction:row; width:720px; height:300px;
+          overflow-x:scroll; scroll-snap-type:x mandatory; }
+.page  { width:720px; height:300px; flex-shrink:0;
+         scroll-snap-align:start; }   /* start = page-edge aligned; center = iOS-photo style */
+</style>
+<div class="banner" id="banner">
+  <div class="page">1</div><div class="page">2</div><div class="page">3</div>
+</div>
+```
+
+Rules that matter:
+
+- `scroll-snap-type` needs the axis **and** `mandatory` (`x mandatory`) —
+  bare `x` means `proximity` in CSS and is rejected by the fence.
+- The snap axis needs `overflow:scroll/auto` on the same element, and at
+  least one direct child must declare `scroll-snap-align` — otherwise the
+  fence emits a warning and no snapping happens (browser-consistent).
+- Physics is built in: crossing 1/3 of a page in the gesture direction
+  commits the flip (2/3 against it), a fling flips at the halfway rule and
+  never skips pages (one page per gesture), the wheel steps exactly one
+  page.
+
+Runtime surface for page indicators and programmatic flips (C#):
+
+```csharp
+banner.PageChanged += e => dots[e.PageIndex].Classes.Set("on", true);
+banner.ScrollToPage(banner.PageIndex + 1);            // Smooth by default
+banner.ScrollToPage(0, ScrollBehavior.Instant);       // jump without tween
+```
+
+`PageChanged` settles once per landing (dragging across page boundaries
+does not fire per-page; the initial page fires on the first frame, so dot
+indicators sync on load).
+
 ## Data-driven lists (virtualized)
 
 Declare a blueprint; game code sets `ItemCount` and binds data at runtime:

@@ -169,6 +169,19 @@ pub fn parse_template_with_css(
         &line_map,
     ));
 
+    // Stage 6.6c: scroll-snap 声明完整性（#59，warning×2 同码）。W1 = snap-type
+    // 声明在 snap 轴无 overflow:scroll/auto 的元素上（无效能力）；W2 = snap 容器
+    // 无任何直接子声明 scroll-snap-align（CSS 初始值 none = 不提供吸附点，容器
+    // 不会吸附）。与浏览器行为一致（静默不吸附）故 warning 不 error；须在
+    // Stage 4（styles 已 cascade）+ Stage 4.5（dynamic_rules）之后。
+    diagnostics.extend(crate::snap_check::check_snap(
+        &tree,
+        &styles,
+        &dynamic_rules,
+        file,
+        &line_map,
+    ));
+
     // Stage 6.7: 控件必须被 CSS 命中。Yio 控件不带 UA 默认样式——写了控件标签却
     // 无匹配 CSS 规则 = 运行时空白（浏览器预览却看着正常，因为浏览器套自己的 UA 表）。
     // 必须在 Annotate 之后（需 IrElement.semantic）+ Stage 4.5 之后（需 dynamic_rules）。

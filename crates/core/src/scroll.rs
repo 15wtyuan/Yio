@@ -9,7 +9,7 @@
 //! core 无 Vec2 类型——几何用 `(f32, f32)` 元组（照 `transform::apply_point`）。
 
 use crate::scene::node::{Node, NodeId, Rect, Scene};
-use crate::style::resolved::OverflowMode;
+use crate::style::resolved::{OverflowMode, SnapAlign, SnapTypeMode};
 
 /// 滚轮输入事件（FFI POD）。C# set_wheel_input 推一组；core apply_wheel_to_hit
 /// 沿祖先找最近 effective 滚动容器 → apply_wheel。
@@ -46,6 +46,12 @@ pub const TWEEN_TIME_DEFAULT: f32 = 0.3;
 pub const PULL_RATIO: f32 = 0.5;
 /// 回弹触发阈值（越界 abs > 20 才回弹，否则 snap）。
 pub const BOUNCE_THRESHOLD: f32 = 20.0;
+/// snap 顺向翻页阈值（越过 1/3 页即翻，fgui defaultScrollPagingThreshold 0.3）。
+pub const SNAP_FORWARD_RATIO: f32 = 0.3;
+/// snap 逆向翻页阈值（须越过 2/3 页才翻回——逆向比顺向难，fgui 1-0.3 对称位）。
+pub const SNAP_REVERSE_RATIO: f32 = 0.7;
+/// snap 快甩翻页阈值（单次位移超一页时退化为过半判定，fgui 0.5）。
+pub const SNAP_FLING_HALF_RATIO: f32 = 0.5;
 /// 滚轮步进（每 delta 单位位移 design px）。对齐浏览器/OS 惯例：一格 ≈ 3 行文本
 /// ≈ 100px @1920×1080 设计分辨率；旧值 25 在千像素级滚动页上体感极慢。
 pub const SCROLL_STEP: f32 = 100.0;
@@ -68,7 +74,8 @@ fn cubic_out(t: f32) -> f32 {
 }
 
 /// 单滚动容器状态。`#[derive(Default)]`：几何全 0、物理全 0/false、tweening=0（无）。
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+/// （Clone 无 Copy：snap_points 是 Vec——吸附点随布局重算，按值复制无意义。）
+#[derive(Debug, Clone, PartialEq)]
 pub struct ScrollPaneState {
     /// 直接子 layout_rect 的 AABB 尺寸。
     pub content_size: (f32, f32),
@@ -98,6 +105,46 @@ pub struct ScrollPaneState {
     /// tween 终点。任何非程序滚动接管（滚轮/拖拽/松手物理/snap/公共 set_scroll_pos）
     /// 清锚。仅 y 轴（ScrollToItem 只滚 y）。
     pub smooth_scroll_to: Option<(NodeId, usize)>,
+    /// scroll-snap 吸附点（#59）：snap 轴上升序去重、已 clamp 进 [0, overlap]。
+    /// refresh_content_sizes 按子节点 scroll-snap-align 重算。空 = 容器声明了
+    /// snap-type 但无子提供吸附点（或非滚动容器）——不吸附，自由滚动照旧。
+    pub snap_points: Vec<f32>,
+    /// snap 轴（0=x / 1=y；容器 scroll-snap-type 推出）。None = 不吸附。
+    pub snap_axis: Option<u8>,
+    /// 本手势起点的 snap 轴 pos（input.rs scroll-start 记）。松手判定的基准页锚。
+    pub snap_ref_pos: f32,
+    /// 拖拽/grip 滚动进行中（input.rs scroll-start 置 / Up 清）。PageChanged
+    /// 只在静止（非拖拽、非 tween）期结算，避免拖拽穿越页界时逐页发事件。
+    pub scroll_dragging: bool,
+    /// 上次已结算页码（PageChanged 去重）。-1 = 未结算（首帧结算即发初始页事件，
+    /// 供指示器 dots 同步初始态）。
+    pub settled_page: i32,
+}
+
+impl Default for ScrollPaneState {
+    fn default() -> Self {
+        // i32 零值 0 会吞掉首帧结算（0==初始页）——未结算哨兵须 -1。
+        Self {
+            content_size: (0.0, 0.0),
+            viewport_size: (0.0, 0.0),
+            overlap: (0.0, 0.0),
+            scroll_pos: (0.0, 0.0),
+            velocity: (0.0, 0.0),
+            tweening: [0, 0],
+            tween_start: (0.0, 0.0),
+            tween_change: (0.0, 0.0),
+            tween_time: (0.0, 0.0),
+            tween_duration: (0.0, 0.0),
+            content_size_dirty: false,
+            content_size_overridden: false,
+            smooth_scroll_to: None,
+            snap_points: Vec::new(),
+            snap_axis: None,
+            snap_ref_pos: 0.0,
+            scroll_dragging: false,
+            settled_page: -1,
+        }
+    }
 }
 
 /// 每节点滚动状态表（`HashMap<NodeId, ScrollPaneState>`）。仅滚动容器 ensure 后有值。
@@ -316,6 +363,172 @@ impl ScrollPaneState {
         }
     }
 
+    /// 升序点集中最近点的下标（并列取小）。
+    fn nearest_index(points: &[f32], pos: f32) -> usize {
+        let mut best = 0usize;
+        let mut best_d = f32::INFINITY;
+        for (i, &p) in points.iter().enumerate() {
+            let d = (p - pos).abs();
+            if d < best_d {
+                best_d = d;
+                best = i;
+            }
+        }
+        best
+    }
+
+    /// 点 p 处的「页尺寸」= 相邻吸附点距（无后邻取前邻；单点 0）。
+    fn page_size_at(points: &[f32], p: usize) -> f32 {
+        if p + 1 < points.len() {
+            points[p + 1] - points[p]
+        } else if p > 0 {
+            points[p] - points[p - 1]
+        } else {
+            0.0
+        }
+    }
+
+    /// 当前最近吸附页下标（-1 = 无吸附点）。
+    pub fn page_index(&self) -> i32 {
+        let Some(ax) = self.snap_axis else {
+            return -1;
+        };
+        if self.snap_points.is_empty() {
+            return -1;
+        }
+        let pos = if ax == 0 {
+            self.scroll_pos.0
+        } else {
+            self.scroll_pos.1
+        };
+        Self::nearest_index(&self.snap_points, pos) as i32
+    }
+
+    /// 松手吸附判定（#59 swipe，fgui AlignByPage 同构判定 + 单页上限）。
+    ///
+    /// 无 snap 轴 / 无吸附点 → 退化为 [`Self::begin_inertia`]（零回归路径）。
+    /// 有 snap：非 snap 轴仍走 begin_inertia；snap 轴目标页 = 参考页（手势起点最近页）
+    /// p 的 p-1/p/p+1 之一——**单次手势至多翻 1 页**（快甩不跳页，等价 snap-stop:always）：
+    /// - 有效位移（手势净位移 + 惯性预测）超一页 → 过半（0.5）判定
+    /// - 否则顺向（与位移同号方向）1/3（0.3）、逆向 2/3（0.7）
+    /// 越界（rubber-band 区）同样落回目标页——snap 容器的边界即首末吸附点。
+    /// 时长按位移/页尺寸比例缩放（fgui FixDuration），下限 TWEEN_TIME_DEFAULT。
+    pub fn begin_snap_release(&mut self, is_touch: bool) {
+        let ax = match self.snap_axis {
+            Some(a) if !self.snap_points.is_empty() => a as usize,
+            _ => {
+                self.begin_inertia(is_touch);
+                return;
+            }
+        };
+        // 非 snap 轴普通惯性（begin_inertia 两轴都设，snap 轴随后覆写）。
+        self.begin_inertia(is_touch);
+        let cur = if ax == 0 {
+            self.scroll_pos.0
+        } else {
+            self.scroll_pos.1
+        };
+        let v = if ax == 0 {
+            self.velocity.0
+        } else {
+            self.velocity.1
+        };
+        let p = Self::nearest_index(&self.snap_points, self.snap_ref_pos);
+        let page = Self::page_size_at(&self.snap_points, p);
+        // 惯性预测位移：与 begin_inertia 同公式（二次 ratio 削弱 + 0.4 系数）。
+        let thresh = if is_touch {
+            INERTIA_THRESH_TOUCH
+        } else {
+            INERTIA_THRESH_PC
+        };
+        let v2 = v.abs();
+        let pred = if v2 > thresh {
+            let ratio = (((v2 - thresh) / thresh).powi(2)).min(1.0);
+            let dur = ((60.0f64 / (v2 * ratio) as f64).log(DECELERATION_RATE).abs() / 60.0) as f32;
+            v * ratio * dur.max(TWEEN_TIME_DEFAULT) * INERTIA_DIST_COEFF
+        } else {
+            0.0
+        };
+        let total = cur - self.snap_ref_pos + pred;
+        // 判定基准 = 惯性预测终点（fgui 语义：UpdateTargetAndDuration 先把 _pos
+        // 累计惯性 change 再 AlignByPage）——快甩时抬手位移小但预测终点远，仍判翻页。
+        let delta = cur + pred - self.snap_points[p];
+        let mut target_i = p as i32;
+        if page > 0.0 {
+            let (thr_pos, thr_neg) = if total.abs() > page {
+                (SNAP_FLING_HALF_RATIO, SNAP_FLING_HALF_RATIO)
+            } else if total >= 0.0 {
+                (SNAP_FORWARD_RATIO, SNAP_REVERSE_RATIO)
+            } else {
+                (SNAP_REVERSE_RATIO, SNAP_FORWARD_RATIO)
+            };
+            if delta > page * thr_pos {
+                target_i = p as i32 + 1;
+            } else if delta < -(page * thr_neg) {
+                target_i = p as i32 - 1;
+            }
+            target_i = target_i.clamp(0, self.snap_points.len() as i32 - 1);
+        }
+        let target = self.snap_points[target_i as usize];
+        let change = target - cur;
+        // 吸附补间时长：fgui FixDuration 按位移比例缩短但下限 TWEEN_TIME_DEFAULT——
+        // 单页内位移（本实现至多一页）全落在下限，即常量 0.3s。
+        let dur = TWEEN_TIME_DEFAULT;
+        if ax == 0 {
+            self.tween_start.0 = cur;
+            self.tween_change.0 = change;
+            self.tween_duration.0 = dur;
+            self.tween_time.0 = 0.0;
+        } else {
+            self.tween_start.1 = cur;
+            self.tween_change.1 = change;
+            self.tween_duration.1 = dur;
+            self.tween_time.1 = 0.0;
+        }
+        self.tweening[ax] = 2;
+    }
+
+    /// 程序翻页（ScrollToPage）：snap 轴 tween 到吸附点 index（越界 index clamp 进
+    /// 点集范围），非 snap 轴不动。animated=false 直接落位。非 snap 容器 no-op。
+    pub fn scroll_to_page(&mut self, index: i32, animated: bool) {
+        let Some(ax) = self.snap_axis else {
+            return;
+        };
+        if self.snap_points.is_empty() {
+            return;
+        }
+        let i = index.clamp(0, self.snap_points.len() as i32 - 1) as usize;
+        let target = self.snap_points[i];
+        let idx = ax as usize;
+        self.smooth_scroll_to = None; // 程序滚动接管 → ScrollToItem 锚作废
+        if !animated {
+            if idx == 0 {
+                self.scroll_pos.0 = target;
+            } else {
+                self.scroll_pos.1 = target;
+            }
+            self.tweening[idx] = 0;
+            return;
+        }
+        let cur = if idx == 0 {
+            self.scroll_pos.0
+        } else {
+            self.scroll_pos.1
+        };
+        if idx == 0 {
+            self.tween_start.0 = cur;
+            self.tween_change.0 = target - cur;
+            self.tween_duration.0 = TWEEN_TIME_DEFAULT;
+            self.tween_time.0 = 0.0;
+        } else {
+            self.tween_start.1 = cur;
+            self.tween_change.1 = target - cur;
+            self.tween_duration.1 = TWEEN_TIME_DEFAULT;
+            self.tween_time.1 = 0.0;
+        }
+        self.tweening[idx] = 1;
+    }
+
     /// 推进 tween（tweening≠0）。
     /// 每帧 cubic_out 推进 pos；**tweening==2 时运行时检测越界**——pos 越界 >20px（或
     /// inertia 完成 change==0 时仍越界）即截断当前 tween，启回弹 tween（弹性过冲回弹）。
@@ -421,6 +634,8 @@ impl ScrollPaneState {
     /// 滚轮：target = (cur - delta*SCROLL_STEP).clamp[0,overlap]，启 tweening=1。
     /// delta.y > 0 = 上滚（看上方）→ scroll_pos.y 减少。
     /// 仅对 delta≠0 的轴设 tweening[ax]=1。
+    /// snap 轴（#59）：整页步进——目标 = 最近吸附点向 delta 方向的相邻点（一滚一页，
+    /// 浏览器 snap 容器滚轮语义）；单点/无邻点退化为普通 clamp 目标。
     pub fn apply_wheel(&mut self, delta: (f32, f32)) {
         self.smooth_scroll_to = None; // 用户滚轮接管 → 程序滚动锚作废
         for ax in 0..2u8 {
@@ -438,7 +653,14 @@ impl ScrollPaneState {
             } else {
                 self.overlap.1
             };
-            let target = (cur - d * SCROLL_STEP).clamp(0.0, ov);
+            let target = if self.snap_axis == Some(ax) && !self.snap_points.is_empty() {
+                let near = Self::nearest_index(&self.snap_points, cur) as i32;
+                let step = if d > 0.0 { near - 1 } else { near + 1 };
+                let clamped = step.clamp(0, self.snap_points.len() as i32 - 1) as usize;
+                self.snap_points[clamped]
+            } else {
+                (cur - d * SCROLL_STEP).clamp(0.0, ov)
+            };
             let start = cur;
             if ax == 0 {
                 self.tween_start.0 = start;
@@ -660,6 +882,16 @@ pub fn refresh_content_sizes(scene: &mut Scene) {
         };
         // anchoring 豁免须在 mutable borrow scene.scroll 前取（读 scene.lists + nodes）。
         let anchoring = scene_is_anchoring(scene, nid);
+        // snap 吸附点收集（#59）：容器声明 scroll-snap-type 时，按直接子的
+        // scroll-snap-align 算各子吸附目标（未 clamp 原始值；clamp 在 ensure 后用
+        // new_overlap）。坐标基准 = 容器 content box 起点。借用法照上方 AABB：
+        // 先不可变遍历子，再 mutable ensure scroll 表。
+        // overridden（虚拟列表）容器不参与——ListView 自持分页/锚定语义。
+        let snap_data: Option<(u8, Vec<f32>)> = if overridden {
+            None
+        } else {
+            collect_snap_points(scene, nid, &kids)
+        };
         let st = scene.scroll.ensure(nid);
         st.content_size_dirty = st.content_size != content;
         st.content_size = content;
@@ -670,6 +902,30 @@ pub fn refresh_content_sizes(scene: &mut Scene) {
         );
         let old_overlap = st.overlap;
         st.overlap = new_overlap;
+        // snap 吸附点落位（#59）：clamp 进 [0, new_overlap] + 升序 + 近重复合并
+        //（<0.5px 视同点——不同 align 的子落在同目标时不产重复页）。
+        match snap_data {
+            Some((axis, mut pts)) => {
+                for p in pts.iter_mut() {
+                    *p = p.clamp(
+                        0.0,
+                        if axis == 0 {
+                            new_overlap.0
+                        } else {
+                            new_overlap.1
+                        },
+                    );
+                }
+                pts.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+                pts.dedup_by(|a, b| (*a - *b).abs() < 0.5);
+                st.snap_axis = Some(axis);
+                st.snap_points = pts;
+            }
+            None => {
+                st.snap_axis = None;
+                st.snap_points.clear();
+            }
+        }
         // content_size 变化补偿（最小）：geometry 变了，若 scroll_pos 跑出新
         // [0, overlap] 范围，直接 clamp 并取消正在跑的 tween。
         // 仅 overlap 变时才 clamp（drag 拖出界的 rubber-banding 不 clamp）。
@@ -703,6 +959,91 @@ fn content_box_size(node: &Node) -> (f32, f32) {
     let pt = crate::render::resolve_lp(ts.padding.top);
     let pb = crate::render::resolve_lp(ts.padding.bottom);
     ((lr.w - pl - pr).max(0.0), (lr.h - pt - pb).max(0.0))
+}
+
+/// 收集容器的 snap 吸附点（#59）。返 (轴, 各子未 clamp 目标 pos)；容器未声明
+/// scroll-snap-type → None。目标 pos 语义：该子对齐位与视口对齐位重合时的 scroll_pos：
+/// - start：子 lead 边贴视口起点 → lead − origin
+/// - center：子中心贴视口中心 → lead − origin − (vp − size)/2
+/// - end：子 trail 边贴视口终点 → lead − origin − (vp − size)
+/// align=None 的子不提供吸附点（照 CSS 初始值）；零尺寸子（空白文本节点）跳过。
+fn collect_snap_points(scene: &Scene, nid: NodeId, kids: &[NodeId]) -> Option<(u8, Vec<f32>)> {
+    let node = scene.get_live(nid, "scroll/collect_snap_points");
+    let axis = match node.style.scroll_snap_type {
+        SnapTypeMode::XMandatory => 0u8,
+        SnapTypeMode::YMandatory => 1u8,
+        SnapTypeMode::None => return None,
+    };
+    let lr = node.layout_rect;
+    let ts = &node.style.taffy_style;
+    let pl = crate::render::resolve_lp(ts.padding.left);
+    let pt = crate::render::resolve_lp(ts.padding.top);
+    let (origin, vp) = if axis == 0 {
+        (
+            lr.x + pl,
+            (lr.w - pl - crate::render::resolve_lp(ts.padding.right)).max(0.0),
+        )
+    } else {
+        (
+            lr.y + pt,
+            (lr.h - pt - crate::render::resolve_lp(ts.padding.bottom)).max(0.0),
+        )
+    };
+    let mut pts = Vec::new();
+    for c in kids {
+        let cn = scene.get_live(*c, "scroll/collect_snap_points");
+        let align = cn.style.scroll_snap_align;
+        if align == SnapAlign::None {
+            continue;
+        }
+        let r = cn.layout_rect;
+        if r.w == 0.0 && r.h == 0.0 {
+            continue;
+        }
+        let (lead, size) = if axis == 0 { (r.x, r.w) } else { (r.y, r.h) };
+        let pos = match align {
+            SnapAlign::Start => lead - origin,
+            SnapAlign::Center => lead - origin - (vp - size) * 0.5,
+            SnapAlign::End => lead - origin - (vp - size),
+            SnapAlign::None => unreachable!("早退"),
+        };
+        pts.push(pos);
+    }
+    Some((axis, pts))
+}
+
+/// 结算吸附页码事件（#59，tick 每帧 advance_all 后调）。snap 容器静止
+/// （非拖拽、非 tween）且最近页 ≠ 上次结算页 → 发 `EVT_PAGE_CHANGED`
+/// （touch_id 装页码，镜像 EVT_SELECTION_CHANGED 的 i32 装载模式）。
+/// 首帧结算即发初始页（settled_page 初始 -1）——banner 圆点指示器靠它同步初始态。
+pub fn drain_page_events(scene: &mut Scene, out: &mut Vec<crate::input::EventRecord>) {
+    let mut fired: Vec<(NodeId, i32)> = Vec::new();
+    for (id, st) in scene.scroll.0.iter_mut() {
+        if st.snap_axis.is_none() || st.snap_points.is_empty() {
+            continue;
+        }
+        if st.scroll_dragging || st.tweening_any() {
+            continue;
+        }
+        let idx = st.page_index();
+        if idx >= 0 && idx != st.settled_page {
+            st.settled_page = idx;
+            fired.push((*id, idx));
+        }
+    }
+    for (id, idx) in fired {
+        out.push(crate::input::EventRecord {
+            node_id: id.0,
+            event_type: crate::input::EVT_PAGE_CHANGED,
+            click_count: 0,
+            pad: [0, 0],
+            touch_id: idx,
+            x: 0.0,
+            y: 0.0,
+            dx: 0.0,
+            dy: 0.0,
+        });
+    }
 }
 
 /// 该 pane 是否正被某个 anchoring 活跃的 ListView 补偿（其祖先链含 pane）。

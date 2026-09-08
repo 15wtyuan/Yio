@@ -124,7 +124,15 @@ API 面见 public-api.md §4.4。投影机制：
 - **死亡通知双路径单一出口**：`NodeRegistry.Remove` 对组件 wrapper fire `OnDisconnected` + 标 `_disposed`。两条 evict 路径汇入：用户 `Dispose`（同步——DisposeDescendantsInRegistry 递归 evict，后代先于自身）与 `PumpRemovedNodes` 帧泵（FFI `yio_stage_drain_removed_nodes`，take 语义快照缓存于 StageHandle；core 队列挂在 `Scene::free_node_slot` 单一漏斗，任何删除路径都入队，释放序 = 叶先于祖先）。C# Dispose 先 evict → 泵后查无 wrapper = 天然去重；无 wrapper 的死亡（list 换绑 churn 的克隆 id）静默跳过，非组件滞留 wrapper 顺带 evict（死亡显式化：后续读抛 ObjectDisposedException 而非死 id 静默打 FFI）。
 - **YioHost.Step 泵位**：CollectInput 后、PumpLogic 前——已断开的组件本帧不再跑 OnUpdate。
 
-### 3.5 待办（按优先级）
+### 3.5 吸附页投影（#59 批1）
+
+API 面见 public-api.md §4（`PageIndex` / `ScrollToPage` / `PageChanged`）。投影机制：
+
+- **读经 FFI 直转**：`PageIndex` → `yio_stage_get_page_index`（非 snap 容器/无效节点 -1）；`ScrollToPage` → `yio_stage_scroll_to_page`（index clamp 进吸附点集、非 snap 容器 no-op）——与 `ScrollPos`/`ScrollTo` 同款零缓存直转，物理真身在 core scroll.rs。
+- **事件走 typed route struct**：core `EVT_PAGE_CHANGED=31`（touch_id 装页码，镜像 EVT_SELECTION_CHANGED 的 i32 装载）→ demux 产 internal `ControlPageChangedEvent`（EventDemuxer）→ `Node.PageChanged` 访问器翻译为公共 `PageChangedEvent { Container, PageIndex }`（ExpandChanged 同款 add/remove backing 字典模式）。事件结构体登记进 HeadlessTests `ExpectedEventStructs` 清单（`NoUnexpectedEventStructsAdded` 门）。
+- **CSS 层与运行时层词汇分工**：CSS 侧用标准名（`scroll-snap-type`/`scroll-snap-align`，给 AI 写）；运行时 API 用生态词汇（Page*，给人写）——`scroll-snap-type: x mandatory` 容器 ⇔ `PageIndex`/`ScrollToPage` 可用，对应关系 fence.md「滚动吸附」节写明。
+
+### 3.6 待办（按优先级）
 
 1. **标记优化点**：字符串 flush 若成热点换二进制 batch FFI（`set_style_props(nodeId, propId[], values[])`，Rust 加绕过 parse 的直写路径）——§2.2。
 

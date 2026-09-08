@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **滑动翻页 / 滚动吸附（#59 批1）**：CSS 声明面收 `scroll-snap-type`（`none` /
+  `x mandatory` / `y mandatory`——裸轴、`proximity`、`both` 围栏拒收并引导显式
+  mandatory 形）与 `scroll-snap-align`（`none`/`start`/`center`/`end`，子元素吸附点，
+  CSS 初始值 none=不提供吸附点）。物理全在 core：松手判定 fgui 同构（顺向 1/3、
+  逆向 2/3、快甩过半且**单次手势至多翻一页**），滚轮在 snap 容器上整页步进；
+  判定基准 = 惯性预测终点。运行时 API：`Node.PageIndex`（非 snap 容器 -1）/
+  `ScrollToPage(index, behavior)`（index clamp 进点集）+ `PageChanged` 事件
+  （静止期结算——拖拽穿越页界不逐页发、落定发一次、首帧发初始页、程序翻页同发）。
+  围栏新增 `FenceSnapNoEffect` warning：snap-type 声明在 snap 轴无 overflow 的元素、
+  或 snap 容器无任何子声明 align——与浏览器一致的静默不吸附显式化。pkg 格式 v59
+  （ResolvedStyle +scroll_snap_type/scroll_snap_align，旧包拒载）。showcase 新增
+  `swipe` 页：4 页 banner（拖 1/3 翻页/快甩单页/首末回弹/滚轮一滚一页）+ dots
+  指示器（PageChanged 类切换）+ ScrollToPage 重载粒度按钮读数 + center 对齐对照。
+
 ## [0.0.18] - 2026-09-07
 
 ### Added

@@ -149,6 +149,13 @@ pub enum DiagnosticCode {
     /// 的 overflow 裁剪器 + clip-path 裁剪器总数超 4 时超限。authored 超深在此
     /// 拒（运行时 CSS 注入路径由 core warn-once 兜底）。
     FenceClipChainTooDeep,
+    /// `scroll-snap-type` 声明无法生效（warning，#59）。两种形态同一码：①声明在
+    /// snap 轴无 overflow:scroll/auto 的元素上（吸附语义挂滚动容器，非滚动容器
+    /// 声明是无效能力）；②snap 容器的直接子元素全部未声明 `scroll-snap-align`
+    /// （CSS 初始值 none = 不提供吸附点——照浏览器，无吸附点则不吸附）。warning
+    /// 而非 error：与浏览器行为一致（静默不吸附），预览不说谎；但 AI 常漏写
+    /// 子侧 align，提示把「不吸附」从静默变显式。
+    FenceSnapNoEffect,
 }
 
 #[derive(Debug, Clone)]

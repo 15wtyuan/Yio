@@ -158,6 +158,10 @@ pub const EVT_SELECTION_CHANGED: u8 = 26;
 /// Tree branch 条目展开/折叠（#8，30——27/28 被 event.rs 动画 key/hook 占）。发在 treeitem 节点上，touch_id = 展开新态
 ///（1=展开 / 0=折叠）。镜像 EVT_SELECTION_CHANGED 的「仅净变才发」纪律。
 pub const EVT_EXPAND_CHANGED: u8 = 30;
+/// 滚动吸附页落定（#59，31）。发在 snap 容器节点上，touch_id = 落定页码。
+/// 仅静止期（非拖拽、非 tween）结算净变化——拖拽穿越页界不逐页发，落定发一次；
+/// 首帧结算发初始页（圆点指示器初始态同步）。程序翻页（ScrollToPage）同样落定后发。
+pub const EVT_PAGE_CHANGED: u8 = 31;
 
 const CLICK_THRESHOLD_MOUSE: f32 = 10.0; // per-axis click 容忍（鼠标）
 const CLICK_THRESHOLD_TOUCH: f32 = 50.0; // per-axis click 容忍（触摸）
@@ -1079,6 +1083,17 @@ impl PointerState {
                                         slot.scroll_testing = false;
                                         slot.drag_target = None; // 抑制 drag（互斥：scroll 赢）
                                         slot.drag_testing = false;
+                                        // snap 手势基准（#59）：记起点 pos + 拖拽标记。
+                                        // 松手判定以手势起点最近页为基准页；拖拽期间
+                                        // PageChanged 不结算。
+                                        if let Some(s) = scene.scroll.get_mut(pane_id) {
+                                            s.scroll_dragging = true;
+                                            s.snap_ref_pos = match s.snap_axis {
+                                                Some(0) => s.scroll_pos.0,
+                                                Some(_) => s.scroll_pos.1,
+                                                None => 0.0,
+                                            };
+                                        }
                                     } else {
                                         // 让出 → 提升到下一可滚祖先；无祖先可提升 → 停 scroll_testing
                                         slot.scroll_candidate =
@@ -1214,6 +1229,10 @@ impl PointerState {
                     if let Some(grip) = crate::hit::hit_scrollbar_grip(scene, (ev.x, ev.y)) {
                         slot.grip_dragging = true;
                         slot.scrolling_pane = Some(grip.0);
+                        // grip 拖拽也是滚动进行中（#59：期间 PageChanged 不结算，松手统一清）。
+                        if let Some(s) = scene.scroll.get_mut(grip.0) {
+                            s.scroll_dragging = true;
+                        }
                         slot.click_cancelled = true;
                         slot.scroll_down_pos = (ev.x, ev.y);
                         slot.is_down = true;
@@ -1369,16 +1388,20 @@ impl PointerState {
                             });
                         }
                     }
-                    // scrolling_pane 中 Up（非 Canceled）→ begin_inertia；Canceled 不启惯性。grip 拖拽不启惯性。
+                    // scrolling_pane 中 Up（非 Canceled）→ 松手物理（snap 容器走吸附判定，
+                    // begin_snap_release 无 snap 轴/点时退化为 begin_inertia）；Canceled 不启。
+                    // grip 拖拽不启物理（用户精确拖条定位，pos 停在拖处）。
+                    // 两路径都清 scroll_dragging（#59：PageChanged 恢复结算）。
                     // 复制 scrolling_pane 出 slot 解借用冲突。
                     let scrolling_pane_up = slot.scrolling_pane;
-                    if ev.kind == PointerKind::Up {
-                        if let Some(pane) = scrolling_pane_up {
-                            if !slot.grip_dragging {
-                                if let Some(s) = scene.scroll.get_mut(pane) {
-                                    s.begin_inertia(touch_id >= 0); // is_touch
-                                }
+                    if let Some(pane) = scrolling_pane_up {
+                        if ev.kind == PointerKind::Up && !slot.grip_dragging {
+                            if let Some(s) = scene.scroll.get_mut(pane) {
+                                s.begin_snap_release(touch_id >= 0); // is_touch
                             }
+                        }
+                        if let Some(s) = scene.scroll.get_mut(pane) {
+                            s.scroll_dragging = false;
                         }
                     }
                     slot.is_down = false;

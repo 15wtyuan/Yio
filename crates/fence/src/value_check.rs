@@ -72,13 +72,23 @@ pub fn value_error(prop: &str, value: &str) -> Option<String> {
         }
         "clip-path" => {
             // 委托 core parse_clip_path（与运行时 apply_decl 同一真相源）：域外形态
-            // （ellipse()/inset()/closest-side/fill-rule 前缀/geometry-box 关键字/
+            // （ellipse()/inset()/closest-side/farthest-side/fill-rule 前缀/geometry-box 关键字/
             // 裸 circle()/点数 3..=16 外）统一拒。`none` 合法（清除声明）。
             if value == "none" || yio_core::style::mapping::parse_clip_path(value).is_some() {
                 return None;
             }
             return Some(format!(
                 "value \"{value}\" is not valid for CSS property \"clip-path\"                  (fence subset: none | circle(<length|%> [at <length|%> <length|%>]) |                  polygon(<x> <y>, ...) with 3..=16 points; ellipse()/inset()/                  closest-side/farthest-side/fill-rule are outside the fence)"
+            ));
+        }
+        "scroll-snap-type" => {
+            // 委托 core parse_scroll_snap_type（同一真相源）。裸 x/y（= proximity 缺省）、
+            // proximity、both/block/inline 全拒——围栏只收显式 mandatory 形。
+            if yio_core::style::mapping::parse_scroll_snap_type(value).is_some() {
+                return None;
+            }
+            return Some(format!(
+                "value \"{value}\" is not valid for CSS property \"scroll-snap-type\"                  (fence subset: none | x mandatory | y mandatory — bare x/y means proximity in CSS,                  which the fence rejects; always write the axis + mandatory explicitly)"
             ));
         }
         _ => {}

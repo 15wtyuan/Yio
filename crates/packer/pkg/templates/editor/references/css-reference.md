@@ -43,6 +43,19 @@ error):
 - `animation` and longhands: `animation-name` / `animation-duration` / `animation-timing-function` / `animation-delay` / `animation-iteration-count` / `animation-direction` / `animation-fill-mode` / `animation-play-state`
 - `transition`
 - `overflow-x` / `overflow-y` — visible / hidden / scroll / auto
+- `scroll-snap-type` — paging snap on a scroll container (fence subset):
+  `none` / `x mandatory` / `y mandatory`. Always write the axis + `mandatory`
+  explicitly: bare `x` / `y` means `proximity` in CSS and the fence rejects it;
+  `proximity` / `both` / `block` / `inline` are outside the fence. Page-turn
+  physics: crossing 1/3 of a page in the gesture direction commits the flip
+  (2/3 against it), a fling crossing a full page flips at the halfway rule and
+  is capped at one page per gesture; mouse wheel steps exactly one page.
+  Declaring it on an element whose snap axis has no `overflow:scroll/auto`, or
+  with no child declaring `scroll-snap-align`, produces a check warning
+  (no snapping happens — browser-consistent).
+- `scroll-snap-align` — snap-point alignment on the container's direct
+  children: `none` (CSS initial — this child provides no snap area) / `start` /
+  `center` / `end`
 - `clip-path` — geometric shape mask (fence subset): `none` |
   `circle(<length|%> [at <length|%> <length|%>])` |
   `polygon(<x> <y>, ...)` with 3..=16 points. Circle `%` radius resolves
