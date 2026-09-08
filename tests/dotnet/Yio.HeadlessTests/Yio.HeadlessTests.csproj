@@ -28,15 +28,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\..\unity\package\Runtime\Public\Yio.*.cs" Link="Public\%(Filename)%(Extension)" />
-    <Compile Include="..\..\..\unity\package\Runtime\Projection\*.cs" Link="Projection\%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\unity\package\Runtime\Core\Public\Yio.*.cs" Link="Public\%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\unity\package\Runtime\Core\Projection\*.cs" Link="Projection\%(Filename)%(Extension)" />
     <!-- 引擎无关机械门（#14 前重构）：Host/（YioHost+YioBackend）+ FrameBlob + YioManifests
          必须在本工程（无 UnityEngine）零 stub 编过——这是「中性层不渗引擎类型」的唯一编译期
          兜底（Unity asmdef 永远隐式引 UnityEngine，挡不住渗漏；历史教训：FrameBlob 曾靠
          tests/dotnet/Stubs/UnityEngine.cs 假类型圆谎）。 -->
-    <Compile Include="..\..\..\unity\package\Runtime\Host\*.cs" Link="Host\%(Filename)%(Extension)" />
-    <Compile Include="..\..\..\unity\package\Runtime\FrameBlob.cs" Link="FrameBlob.cs" />
-    <Compile Include="..\..\..\unity\package\Runtime\YioManifests.cs" Link="YioManifests.cs" />
+    <Compile Include="..\..\..\unity\package\Runtime\Core\Host\*.cs" Link="Host\%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\unity\package\Runtime\Core\FrameBlob.cs" Link="FrameBlob.cs" />
+    <Compile Include="..\..\..\unity\package\Runtime\Core\YioManifests.cs" Link="YioManifests.cs" />
     <!-- csbindgen P/Invoke 声明（Native）+ 手补 #[repr(C)] 镜像 struct（PointerEvent/KeyEvent/WheelEvent）。
          YioBindings.cs 引用后三者作 *PointerEvent 等参数类型，必须一并编进同一程序集。 -->
     <Compile Include="..\..\..\unity\package\Plugins\Yio\Bindings\*.cs" Link="Bindings\%(Filename)%(Extension)" />

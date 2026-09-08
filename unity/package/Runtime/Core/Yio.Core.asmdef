@@ -1,0 +1,8 @@
+{
+    "name": "Yio.Core",
+    "rootNamespace": "Yio",
+    "references": ["Yio.Bindings"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true
+}

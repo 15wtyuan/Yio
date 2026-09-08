@@ -1,7 +1,7 @@
 {
     "name": "Yio.Editor",
     "rootNamespace": "Yio.Editor",
-    "references": ["Yio.Runtime"],
+    "references": ["Yio.Core", "Yio.Runtime"],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

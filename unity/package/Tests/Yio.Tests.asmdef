@@ -2,6 +2,7 @@
     "name": "Yio.Tests",
     "rootNamespace": "Yio.Tests",
     "references": [
+        "Yio.Core",
         "Yio.Runtime",
         "Yio.Editor",
         "Yio.Bindings",

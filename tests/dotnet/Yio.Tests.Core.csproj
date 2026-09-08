@@ -18,8 +18,8 @@
 
     <!-- FrameBlob 中性化后用自有类型（YioVector2/YioColor）——带 Public/Yio.Types.cs
          依赖（该文件纯 System，无引擎引用；本工程无 stub，编过即纯度门）。 -->
-    <Compile Include="..\..\unity\package\Runtime\Public\Yio.Types.cs" Link="Src\Yio.Types.cs" />
-    <Compile Include="..\..\unity\package\Runtime\FrameBlob.cs" Link="Src\FrameBlob.cs" />
+    <Compile Include="..\..\unity\package\Runtime\Core\Public\Yio.Types.cs" Link="Src\Yio.Types.cs" />
+    <Compile Include="..\..\unity\package\Runtime\Core\FrameBlob.cs" Link="Src\FrameBlob.cs" />
     <!-- golden 跨语言对拍 fixture（Rust ffi golden_tests 产器落盘；
          再生成方式见 crates/ffi/src/golden_tests.rs 模块注释） -->
     <None Include="golden\*.bin" Link="golden\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

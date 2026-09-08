@@ -2,6 +2,7 @@
     "name": "Yio.Tests.PlayMode",
     "rootNamespace": "Yio.Tests",
     "references": [
+        "Yio.Core",
         "Yio.Runtime",
         "Yio.Bindings",
         "UnityEngine.TestRunner"

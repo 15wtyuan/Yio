@@ -11,15 +11,15 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\..\unity\package\Runtime\Public\Yio.Types.cs" Link="Public\Yio.Types.cs" />
-    <Compile Include="..\..\..\unity\package\Runtime\Public\Yio.Nodes.cs" Link="Public\Yio.Nodes.cs" />
-    <Compile Include="..\..\..\unity\package\Runtime\Public\Yio.Events.cs" Link="Public\Yio.Events.cs" />
+    <Compile Include="..\..\..\unity\package\Runtime\Core\Public\Yio.Types.cs" Link="Public\Yio.Types.cs" />
+    <Compile Include="..\..\..\unity\package\Runtime\Core\Public\Yio.Nodes.cs" Link="Public\Yio.Nodes.cs" />
+    <Compile Include="..\..\..\unity\package\Runtime\Core\Public\Yio.Events.cs" Link="Public\Yio.Events.cs" />
     <!-- D1：EventType enum 同时被 YioEventHandler demux（运行时实现，未编进本冻结门）和
          Events.cs 的 typed struct 关联引用，故 enum 单独放 Public/ 并显式编进 PublicApi。 -->
-    <Compile Include="..\..\..\unity\package\Runtime\Public\Yio.EventType.cs" Link="Public\Yio.EventType.cs" />
+    <Compile Include="..\..\..\unity\package\Runtime\Core\Public\Yio.EventType.cs" Link="Public\Yio.EventType.cs" />
     <!-- C1：Public/Node 引用 internal NodeRegistry + NodeFactory；编译门需把 Projection/ 全集纳入
          以便 internal 类型可解析（验证 public 签名编译性仍兜得住，只是底层依赖一并验）。 -->
-    <Compile Include="..\..\..\unity\package\Runtime\Projection\*.cs" Link="Projection\%(Filename)%(Extension)" />
+    <Compile Include="..\..\..\unity\package\Runtime\Core\Projection\*.cs" Link="Projection\%(Filename)%(Extension)" />
     <!-- NodeFactory 调 Native P/Invoke + 持 StageHandle*；Bindings 必须同 assembly 编译。 -->
     <Compile Include="..\..\..\unity\package\Plugins\Yio\Bindings\*.cs" Link="Bindings\%(Filename)%(Extension)" />
   </ItemGroup>
