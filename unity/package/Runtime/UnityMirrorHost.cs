@@ -93,7 +93,6 @@ namespace Yio
         public MeshFilter Mf;
         public MeshRenderer Mr;
         public Mesh Mesh;
-        public bool Stale;                  // 已废：stale 跟踪移入中性池（保留字段防反射断言编译错——无测试读它）
         public ulong LastNodeId;            // 诊断：最近绑定的 node_id（DumpState 打印；不做复用校验——复用换绑是 reuse_key 池化的正常行为）
 
         // #62 页纹理逐出：本 obj 当前绑定的图集页键（null=非页承载：字体页/miss/纯色）。

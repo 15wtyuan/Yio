@@ -149,7 +149,9 @@ namespace Yio
 
     public enum YioKeyCode
     {
-        // Values match Unity YioKeyCode enum（raw u32 透传直接 cast；core 不解释语义）。
+        // 键码 FFI 契约（引擎中立）：数值族 = GLFW 同源码位（Unity KeyCode 沿用同族），
+        // raw u32 透传、core 不解释语义。各引擎后端负责把自家键枚举映射到本族
+        // （Unity：KeyCode 直接同值；Godot：Godot.Key → 本表映射）。加键先加这里再补引擎映射。
         None = 0,
         Enter = 13,
         Escape = 27,

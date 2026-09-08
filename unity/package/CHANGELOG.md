@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **C# 层引擎无关化重构（#14 Godot 前置）**：asmdef 切分为 `Yio.Core`（引擎无关，
+  `Runtime/Core/`：Public/Projection/Host/FrameBlob/Manifests + Render 镜像策略 + Boot
+  引导）+ `Yio.Runtime`（Unity 件）。镜像 diff 策略（`MirrorPool`）从 Unity 实现中拆出
+  ——池化/stale 销毁/Skip 保活/parked 隐藏/新建强制 FULL/visible=0 保活/mount 路由全部
+  单点在共享层，引擎只实现 `IMirrorHost`/`IMirrorObject`（Unity 实现 `UnityMirrorHost`）。
+  字体图集脏页拉取协议单点化（`FontAtlasSync`，原 ResourceHost/backend 两份合一）。产物
+  引导序列中性化（`YioBootstrapper` + `IYioLoadSource` 四钩子——Driver 的
+  LoadTextFile/LoadBytes/LoadPackageBytes/LoadFontBytes virtual 覆写链不变）。**公共 API
+  冻结签名零变化**；`FrameBlob` mesh/clip 视图类型去 UnityEngine 化（MeshSegment 用
+  `YioVector2`/`YioColor`，ClipEntryView 半径改 `Radii[4]`——反射/诊断消费方注意）。
+- **`YioHost.Instantiate(pkg, comp)` / `YioHost.EnsureSceneRoot()`**（引擎无关便捷封装）：
+  Unity `YioStageDriver` 同名方法保留为兼容转发（null + LogError 契约不变）。
+- **键码 FFI 契约文档化**：`key_code` 数值族 = `YioKeyCode` 枚举值（GLFW 同源；Unity
+  KeyCode 恰同族直用），各引擎后端负责自家键枚举到该族的映射。
+- headless 工程编译面扩容（引擎无关机械门）：HeadlessTests 现编 `Runtime/Core/` 全集零
+  stub（原 `tests/dotnet/Stubs/UnityEngine.cs` 假类型已删）；Tests.Core 新增镜像策略
+  回归 `MirrorPolicyTests`（9 条不变量，fake host——Godot 后端将共享同一份策略与测试）。
+
 ## [0.0.18] - 2026-09-07
 
 ### Added

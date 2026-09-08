@@ -21,18 +21,25 @@
 Rust 核心（真身）：parse → style(cascade) → scene(类型化 Node 树) → layout → render
   - 持有对象树、NodeId、样式、布局、world matrix、mesh 几何
   - 每帧 tick_and_render → build_blob（SOA 扁平帧数据）
-C# 投影层（引擎无关）：语义对象树 = Rust 树的 OOP 投影
-  - Node/Button/Style/... 裹 NodeId，方法转发 FFI
-  - 稀疏镜像（只存写过的属性）+ 脏标记 + NodeId→对象缓存
-引擎后端（Unity/Godot/UE）：MirrorPool 镜像渲染 + 输入采集 + 纹理注册
+C# 引擎无关层（Runtime/Core/，零 UnityEngine，headless 编译门兜底）：
+  - Public（语义对象树 = Rust 树的 OOP 投影）+ Projection（稀疏镜像/攒批/身份缓存）
+  - Host（YioBackend 两方法契约 + YioHost 帧驱动序 + Bootstrapper 产物引导序列）
+  - FrameBlob（中性类型解析视图）+ Render（MirrorPool 镜像 diff 策略 + IMirrorHost 实现契约
+    + FontAtlasSync 脏页拉取协议）
+引擎后端（Runtime/ 根，Unity 件；Godot 未来同构另写）：镜像策略的引擎实现（UnityMirrorHost）
+  + 输入采集 + 材质/纹理/原生挂载 + 生命周期宿主（YioStageDriver）
 ```
 
-C# 投影层引擎无关，Unity 和 Godot-C# 共享；UE-C++ / Godot-GDScript 各写一份等价投影（同样薄，因真身在 Rust，投影只是镜像 + 转发）。
+C# 引擎无关层由 Unity 和 Godot-C# 共享（策略一次实现、两端一致——镜像 diff 不变量由
+headless MirrorPolicyTests 锁）；UE-C++ / Godot-GDScript 各写一份等价投影（同样薄，因真身
+在 Rust，投影只是镜像 + 转发）。asmdef 切分为 `Yio.Core`（引擎无关）+ `Yio.Runtime`
+（Unity 件引用 Core）；Unity asmdef 永远隐式引 UnityEngine 挡不住渗漏，**中性层纯度的
+机械门 = headless csproj 编译面**（tests/dotnet 三工程链 `Runtime/Core/**`，零 stub）。
 
 ### 1.3 v1 现状（此模型已跑通大半）
 
 - v1 渲染路径已是「真身 Rust + 薄后端 + 每帧一次 SOA blob 过桥」：`stage.Tick(dt)` → `build_blob` → C# `FrameBlob` 读定长列 SOA（列数随格式版本增列，以 `crates/ffi/src/blob.rs` 为准）→ `MirrorPool` 对齐 GameObject。**单向 Rust→C# 成熟**（change_level 三级、reuse_key 复用）。
-- v1 回写走命令式 FFI 透传（结构操作 `AppendChild`/`Instantiate`、资源 `SetSrc`、动画 `Tween`、文本 `SetText`...）；**Style 属性走 inline override 便签层**（`set_inline_override`/`unset_inline_override`，4a 落地），**不走 `set_style`**——`set_style` 写 `base_style` 污染设计期基线，已退役（见 `unity/package/Runtime/Projection/StyleMirror.cs:17`）。
+- v1 回写走命令式 FFI 透传（结构操作 `AppendChild`/`Instantiate`、资源 `SetSrc`、动画 `Tween`、文本 `SetText`...）；**Style 属性走 inline override 便签层**（`set_inline_override`/`unset_inline_override`，4a 落地），**不走 `set_style`**——`set_style` 写 `base_style` 污染设计期基线，已退役（见 `unity/package/Runtime/Core/Projection/StyleMirror.cs:17`）。
 - **投影层的增量 = 在 v1 命令式 FFI 上加 OOP 封装 + 攒批回写**，不推翻管线。
 
 ---

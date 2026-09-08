@@ -1,6 +1,6 @@
 # Yio 公共 API 权威契约
 
-> **单一真相源**：`unity/package/Runtime/Public/Yio.*.cs`（冻结的 C# 签名，machine-readable）。本文档为人类可读契约，以签名文件为准。
+> **单一真相源**：`unity/package/Runtime/Core/Public/Yio.*.cs`（冻结的 C# 签名，machine-readable）。本文档为人类可读契约，以签名文件为准。
 >
 > **防漂移门**：`tests/dotnet/Yio.PublicApi` 编译校验——改公共签名后必编过。
 >
@@ -593,6 +593,8 @@ fallback 到默认字体会给出误导性宽度）。
 
 - **UIContext 是「获取而非创建」**：无公共构造，由集成层创建、持有、驱动。业务程序员从集成层暴露的入口获取一个已跑起来的 UIContext。
 - **tick / 输入采集 / 渲染产出**：集成层每帧驱动 tick、采集引擎输入喂入、把渲染树交后端镜像。
+- **引导与便捷实例化（引擎无关面）**：产物引导序列（packages → atlas manifests → image sizes → fonts，产物目录布局 `ui/`+`atlas/`+`fonts/` 单点在 `YioBootstrapper`）与 `YioHost.Instantiate(pkg, comp)` / `YioHost.EnsureSceneRoot()` 是引擎无关 API——引擎集成层用自己的加载钩子（`IYioLoadSource`）接入。Unity `YioStageDriver` 的同名 `Instantiate` 是保兼容的转发（null + LogError 契约）。
+- **键码 FFI 契约**：`key_code` 数值族 = `YioKeyCode` 枚举值（GLFW 同源码位；Unity KeyCode 恰同族直用）。raw u32 透传、core 不解释语义；**各引擎后端负责把自家键枚举映射到该族**（Godot 的 `Godot.Key` 需映射表——Unity 无此负担是历史巧合不是契约）。
 - **纹理注册**：`Image.Src` 是字符串 key（包内 or 运行时注册）。动态纹理的注册（`byte[]→Texture` 解码 + 注册 key）是引擎后端契约（Unity 侧 `SpriteResolver.Register(key, Texture2D)` 一类），用户自己解码塞入。查不到 key = 静默 error 态 + 警告一次，不抛。**每个引擎后端必须提供 runtime key 注册能力。**
 - **原生渲染挂载**：3D 模型/粒子等非 UI 渲染挂载是引擎后端契约（Unity 侧 NativeHost），不进公共 API；集成层自行桥接。
 - **世界锚点（投影路世界 UI）**：`YioStageDriver.SetWorldAnchor(Node, Camera, Vector3 worldPos, Vector2 offsetPx)` / `ClearWorldAnchor(Node)`——Driver 每帧（Step 前）把世界点经相机投到屏幕 → 换算设计坐标写 `node.Transform.Position`（跟随 3D 实体；跳字/血条类 HUD 的官方路）。节点直挂 stage 根且 `position:absolute; left/top:0`（布局位 (0,0)，transform 即绝对坐标）。出屏/相机背后自动隐藏：core 侧 `yio_stage_set_node_visible`（渲染层开关，与 `display:none` 正交——不动布局/命中；**继承语义**同 CSS `visibility:hidden`，隐藏祖先 = 整子树行 visible=0，后端保留镜像对象仅 SetActive(false)）。跳字动画 = 业务侧 TweenBuilder（如 Opacity 通道）× 锚点组合，无框架 helper。

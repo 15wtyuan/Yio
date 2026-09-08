@@ -687,6 +687,8 @@ starves every stage below it of pointer input.
 // YioHost (public; dev bridges — not frozen API):
 public string DumpSceneJson();                     // full scene JSON
 public string DumpSceneTree(string filter = null); // human-readable tree
+public Container Instantiate(string pkg, string comp); // ensure root + clone + mount to Root
+public void EnsureSceneRoot();                     // idempotent; throws if create_root fails
 ```
 
 - **`DumpSceneTree(filter)`** — one line per node

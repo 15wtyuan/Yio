@@ -122,10 +122,11 @@ pub fn dll_status(committed: &Path) -> DllStatus {
     }
 }
 
-/// 校验三个 asmdef 齐全。任一缺失返回 `AsmdefMissing`。
+/// 校验 asmdef 齐全（引擎无关层 Yio.Core + Unity 件 Yio.Runtime 等）。任一缺失返回 `AsmdefMissing`。
 pub fn check_asmdef_present(pkg_dir: &Path) -> Result<(), CheckError> {
     let expected = [
-        "Yio.Runtime.asmdef",
+        "Runtime/Core/Yio.Core.asmdef",
+        "Runtime/Yio.Runtime.asmdef",
         "Editor/Yio.Editor.asmdef",
         "Plugins/Yio/Yio.Bindings.asmdef",
     ];
@@ -396,7 +397,8 @@ serde = { version = "1", features = ["derive"] }
     #[test]
     fn asmdef_present_ok() {
         let dir = tmp_pkg_dir();
-        write_rel(&dir, "Yio.Runtime.asmdef", b"{}");
+        write_rel(&dir, "Runtime/Core/Yio.Core.asmdef", b"{}");
+        write_rel(&dir, "Runtime/Yio.Runtime.asmdef", b"{}");
         write_rel(&dir, "Editor/Yio.Editor.asmdef", b"{}");
         write_rel(&dir, "Plugins/Yio/Yio.Bindings.asmdef", b"{}");
         assert!(check_asmdef_present(&dir).is_ok());
@@ -405,7 +407,8 @@ serde = { version = "1", features = ["derive"] }
     #[test]
     fn asmdef_present_missing() {
         let dir = tmp_pkg_dir();
-        write_rel(&dir, "Yio.Runtime.asmdef", b"{}");
+        write_rel(&dir, "Runtime/Core/Yio.Core.asmdef", b"{}");
+        write_rel(&dir, "Runtime/Yio.Runtime.asmdef", b"{}");
         write_rel(&dir, "Editor/Yio.Editor.asmdef", b"{}");
         // 故意不写 Plugins/Yio/Yio.Bindings.asmdef
         assert!(matches!(

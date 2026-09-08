@@ -296,9 +296,9 @@ namespace Yio
         /// 采集本帧键盘 → set_key_input。KeyDown/Up 事件 + modifiers。
         /// 新旧输入系统双路径：新路径轮询 Keyboard[Key]（wasPressed/wasReleasedThisFrame，
         /// 与鼠标按钮同帧时机），旧路径轮询 Input.GetKeyDown/Up。两路径发码统一取
-        /// KeyCode 数值（core key_code=(uint)KeyCode 契约，FFI 语义不随工程输入配置变——
-        /// InputSystem.Key 与 KeyCode 数值不同，不能直发）。本帧无键事件 →
-        /// set_key_input(null,0)（core 无键盘输入）。
+        /// YioKeyCode 数值族（键码 FFI 契约引擎中立——数值族 = GLFW 同源，Unity KeyCode
+        /// 恰同值；InputSystem.Key 数值不同，不能直发须经 KeyList 平行表换码）。
+        /// 本帧无键事件 → set_key_input(null,0)（core 无键盘输入）。
         /// 长按重复（#76）：Unity 两代输入系统都不合成 OS 键盘重复，这里用 KeyRepeatState
         /// 按 OS 节律重发 keydown（控制键经 core process_keys 即连续生效——长按 Backspace
         /// 连删、方向键连续移动）。
