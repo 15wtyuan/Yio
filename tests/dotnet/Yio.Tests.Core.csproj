@@ -6,6 +6,8 @@
     <Nullable>disable</Nullable>
     <IsPackable>false</IsPackable>
     <RootNamespace>Yio.Tests.Core</RootNamespace>
+    <!-- Render/ 引入 FontAtlasSync（unsafe 指针协议）——本工程随编译面开 unsafe。 -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

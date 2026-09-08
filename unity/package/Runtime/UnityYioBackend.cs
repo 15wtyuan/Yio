@@ -156,14 +156,14 @@ namespace Yio
         }
 
         /// <summary>
-        /// 拉取核心字体 atlas 脏页 → 上传 R8 Texture2D → Sprite 包装 → 注册进 SpriteResolver。
-        /// SyncFrame 内 <see cref="MirrorPool.Sync"/> 前调——本帧渲染节点包含 text Mesh image_path，
-        /// 先注册 atlas Sprite 使 text 节点的 image_path 命中 GetSprite 缓存。
+        /// 拉取核心字体 atlas 脏页（经引擎无关协议 FontAtlasSync）→ 上传 R8 Texture2D →
+        /// 注册进 SpriteResolver。SyncFrame 内 <see cref="MirrorPool"/>.Sync 前调——本帧渲染
+        /// 节点包含 text Mesh image_path，先注册 atlas Sprite 使 text 节点的 image_path
+        /// 命中 GetSprite 缓存。
         ///
         /// 共享宿主（多 Stage）：走 <see cref="YioResourceHost.SyncAtlas"/> 单点拉取
         /// （脏页 clear 是全局的，多 driver 各拉各清会让后拉者永远缺新字形页）。
-        /// 单 Stage：本类 per-stage 路径（双调法取页数据：先探 buf_len=0 返所需字节数
-        /// → 分配 buf → 再调填 w/h/bytes。页面通常 512×512=256KB，独立 ArrayPool 缓冲）。
+        /// 单 Stage：本类 per-stage 路径（新建页纹理即注册，无跨帧缓存）。
         /// </summary>
         unsafe void SyncFontAtlas(StageHandle* h)
         {
@@ -172,48 +172,23 @@ namespace Yio
                 _resourceHost.SyncAtlas(_sprites);
                 return;
             }
-            // 探脏页（通常 ≤8 页；单字体极少超 16）。
-            const int MAX_DIRTY = 16;
-            uint* dirtyPtr = stackalloc uint[MAX_DIRTY];
-            int n = (int)Native.yio_stage_font_atlas_dirty_pages(h, dirtyPtr, (nuint)MAX_DIRTY);
-            if (n <= 0) return;
-            if (n > MAX_DIRTY)
-            {
-                Debug.LogWarning($"[UnityYioBackend] font atlas dirty pages ({n}) exceed MAX_DIRTY ({MAX_DIRTY}); skipping extras");
-                n = MAX_DIRTY;
-            }
-
-            for (int i = 0; i < n; i++)
-            {
-                uint page = dirtyPtr[i];
-                // 此处外层参数已名 h（StageHandle*），重名局 page height 为 ph 避冲突。
-                uint w = 0, ph = 0;
-                // 探所需字节数（buf_len=0, out_buf=null → 返 needed 不写 w/h/pixels）。
-                int needed = (int)Native.yio_stage_font_atlas_page(h, page, &w, &ph, null, (nuint)0);
-                if (needed <= 0) continue;
-
-                byte[] buf = ArrayPool<byte>.Shared.Rent(needed);
-                try
+            FontAtlasSync.Pull(
+                (buf, cap) => (int)Native.yio_stage_font_atlas_dirty_pages(h, buf, cap),
+                (page, w, ph, buf, cap) => (int)Native.yio_stage_font_atlas_page(h, page, w, ph, buf, cap),
+                () => Native.yio_stage_font_atlas_clear_dirty(h),
+                (page, w, ph, buf, len) =>
                 {
-                    fixed (byte* pBuf = buf)
-                    {
-                        int got = (int)Native.yio_stage_font_atlas_page(h, page, &w, &ph, pBuf, (nuint)needed);
-                        if (got != needed) continue;
-                    }
                     // R8 必须用 linear=true：distance 存在 .r，默认 sRGB 采样会被硬件 sRGB→Linear 解码
                     // 把 d 压低（inside 0.59→0.30）→ faceAlpha 算成 0 → 字消失。linear=true 直读 raw byte。
                     var tex = new Texture2D((int)w, (int)ph, TextureFormat.R8, false, true);
-                    fixed (byte* p = buf) { tex.LoadRawTextureData((IntPtr)p, needed); }
+                    fixed (byte* p = buf) { tex.LoadRawTextureData((IntPtr)p, len); }
                     tex.Apply(false, true);
                     // atlas 是 Stage 级单一共享实例（所有字体字形混在同一 page），路径只以 page 为键——
                     // 不含 font_id（font_id 只作 GlyphKey 区分字形槽位，不进 path）。与 render 侧
                     // build_text_mesh 合成的 yio://font-atlas/p{n} 对齐。
-                    string path = FontAtlasPath.Format(page);
-                    _sprites.RegisterFontAtlasPage(path, tex);
-                }
-                finally { ArrayPool<byte>.Shared.Return(buf); }
-            }
-            Native.yio_stage_font_atlas_clear_dirty(h);
+                    _sprites.RegisterFontAtlasPage(FontAtlasPath.Format(page), tex);
+                },
+                msg => Debug.LogWarning($"[UnityYioBackend] {msg}"));
         }
 
         /// <summary>诊断：dump 当前 MirrorPool GO 状态（Unity 渲染视角）。</summary>

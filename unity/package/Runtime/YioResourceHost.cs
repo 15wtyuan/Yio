@@ -77,9 +77,10 @@ namespace Yio
         }
 
         /// <summary>
-        /// 宿主 glyph atlas 同步：拉脏页 → 上传/更新 R8 纹理（本类持有）→ 全量幂等注册进
-        /// 该 driver 的 resolver。页是 append-only（native 侧不重排，旧字形 UV 永不变），
-        /// 脏页只可能是新页或原页扩容——后者复用同一 Texture2D 重上传，不断材质引用。
+        /// 宿主 glyph atlas 同步：经引擎无关协议（<see cref="FontAtlasSync.Pull"/>）拉脏页 →
+        /// 上传/更新 R8 纹理（本类持有）→ 全量幂等注册进该 driver 的 resolver。
+        /// 页是 append-only（native 侧不重排，旧字形 UV 永不变），脏页只可能是新页或原页
+        /// 扩容——后者复用同一 Texture2D 重上传，不断材质引用。
         /// 页纹理必须保持 CPU 可写：原位重上传走 LoadRawTextureData，Apply 传
         /// makeNoLongerReadable=true 会释放 CPU 副本，下一次同尺寸脏页上传即抛
         /// "Texture is not readable"（脏页清不掉 → 每帧重抛、SyncFrame 中断）。
@@ -89,56 +90,37 @@ namespace Yio
             if (_handle == IntPtr.Zero || resolver == null) return;
             HostHandle* h = (HostHandle*)_handle;
 
-            const int MAX_DIRTY = 16;
-            uint* dirtyPtr = stackalloc uint[MAX_DIRTY];
-            int n = (int)Native.yio_host_font_atlas_dirty_pages(h, dirtyPtr, (nuint)MAX_DIRTY);
-            if (n > 0)
-            {
-                if (n > MAX_DIRTY)
-                {
-                    Debug.LogWarning($"[YioResourceHost] font atlas dirty pages ({n}) exceed MAX_DIRTY ({MAX_DIRTY}); skipping extras");
-                    n = MAX_DIRTY;
-                }
-                for (int i = 0; i < n; i++)
-                {
-                    uint page = dirtyPtr[i];
-                    uint w = 0, ph = 0;
-                    int needed = (int)Native.yio_host_font_atlas_page(h, page, &w, &ph, null, (nuint)0);
-                    if (needed <= 0) continue;
-
-                    byte[] buf = System.Buffers.ArrayPool<byte>.Shared.Rent(needed);
-                    try
-                    {
-                        fixed (byte* pBuf = buf)
-                        {
-                            int got = (int)Native.yio_host_font_atlas_page(h, page, &w, &ph, pBuf, (nuint)needed);
-                            if (got != needed) continue;
-                        }
-                        string path = FontAtlasPath.Format(page);
-                        // R8 必须 linear=true：distance 存 .r，sRGB 采样会压低 face 让字消失。
-                        if (_atlasPages.TryGetValue(path, out var tex) && tex != null
-                            && tex.width == (int)w && tex.height == (int)ph)
-                        {
-                            fixed (byte* p = buf) { tex.LoadRawTextureData((IntPtr)p, needed); }
-                            tex.Apply(false, false);
-                        }
-                        else
-                        {
-                            if (tex != null) DestroyTex(tex);
-                            var created = new Texture2D((int)w, (int)ph, TextureFormat.R8, false, true);
-                            fixed (byte* p = buf) { created.LoadRawTextureData((IntPtr)p, needed); }
-                            created.Apply(false, false);
-                            _atlasPages[path] = created;
-                        }
-                    }
-                    finally { System.Buffers.ArrayPool<byte>.Shared.Return(buf); }
-                }
-                Native.yio_host_font_atlas_clear_dirty(h);
-            }
+            FontAtlasSync.Pull(
+                (buf, cap) => (int)Native.yio_host_font_atlas_dirty_pages(h, buf, cap),
+                (page, w, ph, buf, cap) => (int)Native.yio_host_font_atlas_page(h, page, w, ph, buf, cap),
+                () => Native.yio_host_font_atlas_clear_dirty(h),
+                UploadPage,
+                msg => Debug.LogWarning($"[YioResourceHost] {msg}"));
 
             // 全量幂等注册：后挂 driver 首帧拿全；常驻帧是页数级别的字典写。
             foreach (var kv in _atlasPages)
                 resolver.RegisterFontAtlasPage(kv.Key, kv.Value);
+        }
+
+        /// <summary>页上传 sink：原位重上传（同尺寸复用纹理，不断材质引用）或新建。</summary>
+        void UploadPage(uint page, uint w, uint ph, byte[] buf, int len)
+        {
+            string path = FontAtlasPath.Format(page);
+            // R8 必须 linear=true：distance 存 .r，sRGB 采样会压低 face 让字消失。
+            if (_atlasPages.TryGetValue(path, out var tex) && tex != null
+                && tex.width == (int)w && tex.height == (int)ph)
+            {
+                fixed (byte* p = buf) { tex.LoadRawTextureData((IntPtr)p, len); }
+                tex.Apply(false, false);
+            }
+            else
+            {
+                if (tex != null) DestroyTex(tex);
+                var created = new Texture2D((int)w, (int)ph, TextureFormat.R8, false, true);
+                fixed (byte* p = buf) { created.LoadRawTextureData((IntPtr)p, len); }
+                created.Apply(false, false);
+                _atlasPages[path] = created;
+            }
         }
 
         static void DestroyTex(Texture2D tex)

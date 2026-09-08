@@ -25,15 +25,6 @@ namespace Yio
     }
 
     /// <summary>
-    /// Font-atlas image_path construction. Must match Rust render::font_atlas_path
-    /// (image_path field in blob). Changing the format here requires changing both sides.
-    /// </summary>
-    public static class FontAtlasPath
-    {
-        public static string Format(uint page) => $"yio://font-atlas/p{page}";
-    }
-
-    /// <summary>
     /// Sprite key to texture + UV rect resolver.
     /// Consumes self-drawn atlas.png + atlas.json (UV table) from the standalone packer.
     /// Drops Unity SpriteAtlas/Sprite dependency entirely — a cross-engine portability win
