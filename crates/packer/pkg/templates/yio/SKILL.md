@@ -86,8 +86,10 @@ must NOT be open in an editor while verify runs (batchmode takes the
 project lock). Exit codes: 0 clean · 1 import failures (per-asset
 diagnostics) · 2 tool failures (no editor found / timeout / project
 locked / executeMethod did not run). Division of labor: this is the
-LOCAL release gate; CI-side Unity EditMode/PlayMode tests are a separate
-layer (unity-smoke workflow).
+LOCAL release gate; there is NO CI-side Unity test layer (Unity CI
+licensing is unavailable — engine-side verification is manual,
+home-machine acceptance at release audits; automated CI covers the
+Godot backend instead).
 
 ## `yio preview` — the human preview workbench
 

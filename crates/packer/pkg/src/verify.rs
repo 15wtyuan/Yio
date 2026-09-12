@@ -4,9 +4,10 @@
 //! → 拉起 Unity batchmode 跑包内 `Yio.Editor.YioVerifySmoke.Run`（Refresh +
 //! 逐文件正向加载）→ 解析报告。把「产物可导入」从人肉开 Unity 变成一条命令。
 //!
-//! 分层边界（与 unity-smoke CI 分工，不重复）：verify = 本地导入冒烟（发版门，
-//! 编辑器 license 走本机已激活的 Hub 安装）；CI 的 EditMode/PlayMode 测试归
-//! `.github/workflows/unity-smoke.yml`（等 UNITY_LICENSE secret 启用）。
+//! 分层边界：verify = 本地导入冒烟（发版门，编辑器 license 走本机已激活的
+//! Hub 安装）。引擎侧深度回归（EditMode/PlayMode 测试）没有 CI 层——Unity
+//! CI license 不可得，引擎侧验收走家用机手动（v1.0 终审硬门），自动化回归
+//! 押注 Godot 后端。
 //!
 //! 退出码：0 = 全部产物可导入；1 = Unity 报导入失败（数据性，诊断含逐资产
 //! FAIL 行）；2 = 工具性失败（无 unity_root 的本地模式 / 找不到编辑器 / 超时 /
