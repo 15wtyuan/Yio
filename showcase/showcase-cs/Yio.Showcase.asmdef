@@ -1,0 +1,8 @@
+{
+    "name": "Yio.Showcase",
+    "rootNamespace": "",
+    "references": ["Yio.Core"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false
+}

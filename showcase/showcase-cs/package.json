@@ -1,0 +1,15 @@
+{
+  "name": "com.yio.showcase",
+  "version": "0.0.18",
+  "displayName": "Yio Showcase Wiring",
+  "description": "showcase 接线主体（引擎无关）：HTML 摆台 + TryGet/Clicked 接线的纯 Yio API 逻辑。Unity/Godot 各写薄壳消费（#14 档 2）。",
+  "unity": "2021.3",
+  "license": "MIT",
+  "author": {
+    "name": "15wtyuan",
+    "url": "https://github.com/15wtyuan"
+  },
+  "dependencies": {
+    "com.yio.core": "0.0.18"
+  }
+}
