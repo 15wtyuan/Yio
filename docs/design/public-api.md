@@ -1,6 +1,6 @@
 # Yio 公共 API 权威契约
 
-> **单一真相源**：`unity/package/Runtime/Core/Public/Yio.*.cs`（冻结的 C# 签名，machine-readable）。本文档为人类可读契约，以签名文件为准。
+> **单一真相源**：`csharp/core/Public/Yio.*.cs`（冻结的 C# 签名，machine-readable）。本文档为人类可读契约，以签名文件为准。
 >
 > **防漂移门**：`tests/dotnet/Yio.PublicApi` 编译校验——改公共签名后必编过。
 >

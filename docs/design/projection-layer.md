@@ -21,7 +21,7 @@
 Rust 核心（真身）：parse → style(cascade) → scene(类型化 Node 树) → layout → render
   - 持有对象树、NodeId、样式、布局、world matrix、mesh 几何
   - 每帧 tick_and_render → build_blob（SOA 扁平帧数据）
-C# 引擎无关层（Runtime/Core/，零 UnityEngine，headless 编译门兜底）：
+C# 引擎无关层（csharp/core/，零 UnityEngine，headless 编译门兜底）：
   - Public（语义对象树 = Rust 树的 OOP 投影）+ Projection（稀疏镜像/攒批/身份缓存）
   - Host（YioBackend 两方法契约 + YioHost 帧驱动序 + Bootstrapper 产物引导序列）
   - FrameBlob（中性类型解析视图）+ Render（MirrorPool 镜像 diff 策略 + IMirrorHost 实现契约
@@ -39,7 +39,7 @@ headless MirrorPolicyTests 锁）；UE-C++ / Godot-GDScript 各写一份等价�
 ### 1.3 v1 现状（此模型已跑通大半）
 
 - v1 渲染路径已是「真身 Rust + 薄后端 + 每帧一次 SOA blob 过桥」：`stage.Tick(dt)` → `build_blob` → C# `FrameBlob` 读定长列 SOA（列数随格式版本增列，以 `crates/ffi/src/blob.rs` 为准）→ `MirrorPool` 对齐 GameObject。**单向 Rust→C# 成熟**（change_level 三级、reuse_key 复用）。
-- v1 回写走命令式 FFI 透传（结构操作 `AppendChild`/`Instantiate`、资源 `SetSrc`、动画 `Tween`、文本 `SetText`...）；**Style 属性走 inline override 便签层**（`set_inline_override`/`unset_inline_override`，4a 落地），**不走 `set_style`**——`set_style` 写 `base_style` 污染设计期基线，已退役（见 `unity/package/Runtime/Core/Projection/StyleMirror.cs:17`）。
+- v1 回写走命令式 FFI 透传（结构操作 `AppendChild`/`Instantiate`、资源 `SetSrc`、动画 `Tween`、文本 `SetText`...）；**Style 属性走 inline override 便签层**（`set_inline_override`/`unset_inline_override`，4a 落地），**不走 `set_style`**——`set_style` 写 `base_style` 污染设计期基线，已退役（见 `csharp/core/Projection/StyleMirror.cs:17`）。
 - **投影层的增量 = 在 v1 命令式 FFI 上加 OOP 封装 + 攒批回写**，不推翻管线。
 
 ---
