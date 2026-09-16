@@ -1,0 +1,19 @@
+{
+  "name": "com.yio.core",
+  "version": "0.0.18",
+  "displayName": "Yio Core",
+  "description": "跨引擎游戏 UI 框架——引擎无关 C# 中性层（公共 API / 投影 / 镜像策略 / boot 管线）。Unity 侧经 UPM 本地包引用（showcase 工程 manifest file: 路径），Godot / headless 侧经 Yio.Core.csproj 消费同源文件。",
+  "unity": "2021.3",
+  "license": "MIT",
+  "author": {
+    "name": "15wtyuan",
+    "url": "https://github.com/15wtyuan"
+  },
+  "keywords": [
+    "ui",
+    "html",
+    "css",
+    "game-ui",
+    "rust"
+  ]
+}

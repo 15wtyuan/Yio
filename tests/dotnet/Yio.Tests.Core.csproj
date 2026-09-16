@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -22,9 +22,9 @@
          依赖（该文件纯 System，无引擎引用；本工程无 stub，编过即纯度门）。
          Render/（中性 MirrorPool + IMirror 契约）供 MirrorPolicyTests——镜像 diff 策略的
          引擎无关回归（#14 Godot 后端共享同一份策略）。 -->
-    <Compile Include="..\..\unity\package\Runtime\Core\Public\Yio.Types.cs" Link="Src\Yio.Types.cs" />
-    <Compile Include="..\..\unity\package\Runtime\Core\FrameBlob.cs" Link="Src\FrameBlob.cs" />
-    <Compile Include="..\..\unity\package\Runtime\Core\Render\*.cs" Link="Src\Render\%(Filename)%(Extension)" />
+    <Compile Include="..\..\csharp\core\Public\Yio.Types.cs" Link="Src\Yio.Types.cs" />
+    <Compile Include="..\..\csharp\core\FrameBlob.cs" Link="Src\FrameBlob.cs" />
+    <Compile Include="..\..\csharp\core\Render\*.cs" Link="Src\Render\%(Filename)%(Extension)" />
     <!-- golden 跨语言对拍 fixture（Rust ffi golden_tests 产器落盘；
          再生成方式见 crates/ffi/src/golden_tests.rs 模块注释） -->
     <None Include="golden\*.bin" Link="golden\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
