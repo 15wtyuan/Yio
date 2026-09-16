@@ -122,10 +122,10 @@ pub fn dll_status(committed: &Path) -> DllStatus {
     }
 }
 
-/// 校验 asmdef 齐全（引擎无关层 Yio.Core + Unity 件 Yio.Runtime 等）。任一缺失返回 `AsmdefMissing`。
+/// 校验 asmdef 齐全（Unity 件 Yio.Runtime / Yio.Editor / Yio.Bindings 等）。任一缺失返回 `AsmdefMissing`。
+/// 中性层 Yio.Core.asmdef 已迁出 unity/package（#14 批 A，现住 csharp/core/）——由主流程单独检查。
 pub fn check_asmdef_present(pkg_dir: &Path) -> Result<(), CheckError> {
     let expected = [
-        "Runtime/Core/Yio.Core.asmdef",
         "Runtime/Yio.Runtime.asmdef",
         "Editor/Yio.Editor.asmdef",
         "Plugins/Yio/Yio.Bindings.asmdef",
@@ -276,6 +276,12 @@ pub fn run_release_check() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     check_asmdef_present(&pkg_dir)?;
+    // 中性层 asmdef（csharp/core/，UPM 本地包根）：Unity 包拓扑经 manifest file: 引用
+    // 依赖它的存在——发版路径完整性的一部分。
+    let core_asmdef = paths::repo_root().join("csharp/core/Yio.Core.asmdef");
+    if !core_asmdef.exists() {
+        return Err(CheckError::AsmdefMissing("csharp/core/Yio.Core.asmdef".into()).into());
+    }
 
     // yio CLI 版本同轨：crate 版本 == unity 包版本。链条 tag → package.json →
     // pkg crate → `yio version`，缺环即消费者装错版本号。
@@ -397,7 +403,6 @@ serde = { version = "1", features = ["derive"] }
     #[test]
     fn asmdef_present_ok() {
         let dir = tmp_pkg_dir();
-        write_rel(&dir, "Runtime/Core/Yio.Core.asmdef", b"{}");
         write_rel(&dir, "Runtime/Yio.Runtime.asmdef", b"{}");
         write_rel(&dir, "Editor/Yio.Editor.asmdef", b"{}");
         write_rel(&dir, "Plugins/Yio/Yio.Bindings.asmdef", b"{}");
@@ -407,7 +412,6 @@ serde = { version = "1", features = ["derive"] }
     #[test]
     fn asmdef_present_missing() {
         let dir = tmp_pkg_dir();
-        write_rel(&dir, "Runtime/Core/Yio.Core.asmdef", b"{}");
         write_rel(&dir, "Runtime/Yio.Runtime.asmdef", b"{}");
         write_rel(&dir, "Editor/Yio.Editor.asmdef", b"{}");
         // 故意不写 Plugins/Yio/Yio.Bindings.asmdef
