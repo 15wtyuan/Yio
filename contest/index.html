@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Yio AI 大赛评审官网：面向 AI 协作开发的跨引擎游戏 UI 框架。">
+  <title>Yio AI 大赛评审站</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-noise" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="wordmark" href="#top" aria-label="返回顶部">
+      <span class="wordmark-mark">Y</span>
+      <span class="wordmark-copy"><strong>Yio</strong><small>AI GAME UI FRAMEWORK</small></span>
+    </a>
+    <nav class="site-nav" aria-label="主导航">
+      <a href="#demo">在线体验</a>
+      <a href="#innovation">核心创新</a>
+      <a href="#process">生成过程</a>
+      <a href="#evidence">验证证据</a>
+    </nav>
+    <a class="header-cta" href="https://github.com/15wtyuan/Yio">查看源码</a>
+  </header>
+
+  <main id="top">
+    <section class="hero section-shell">
+      <div class="hero-copy reveal">
+        <p class="eyebrow">AI 大赛项目申报 · 2026</p>
+        <h1>让 AI 画游戏 UI，<br>探索制作新方式。</h1>
+        <p class="hero-lead">从画 UI、拼 UI 到编写 UI 代码、检查并运行，Yio 把完整开发链路放进同一个对话。LLM 持续理解需求、修改源码、执行验证并修复问题，最终交付可运行、可维护的游戏界面。</p>
+        <p class="hero-lead hero-lead-detail">Yio 探索 AI 时代游戏 UI 的新生产方式：使用标准 HTML/CSS 表达设计，让 AI 能够理解、生成与修改；通过围栏验证保证结果可靠，再由 Rust 跨引擎核心交付为可运行、可维护的游戏界面。</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#demo">体验三页 Demo</a>
+          <a class="button button-secondary" href="#process">查看生成记录</a>
+        </div>
+        <div class="hero-proof">
+          <div><strong>22</strong><span>现有场景化页面</span></div>
+          <div><strong>18</strong><span>公开迭代版本</span></div>
+          <div><strong>9.5×</strong><span>增量布局基准提升</span></div>
+        </div>
+      </div>
+
+      <div class="hero-visual reveal" aria-label="Yio 工作流示意">
+        <div class="workflow-head"><span>YIO WORKFLOW</span><strong>从描述到游戏运行时</strong></div>
+        <div class="workflow-list">
+          <div class="workflow-step"><span>01</span><div><small>需求输入</small><strong>用自然语言描述界面目标</strong></div></div>
+          <div class="workflow-step"><span>02</span><div><small>源码生成</small><strong>AI 编写标准 HTML 和 CSS</strong></div></div>
+          <div class="workflow-step"><span>03</span><div><small>机器校验</small><strong>Fence 检查语法、结构与样式</strong></div></div>
+          <div class="workflow-step workflow-step-final"><span>04</span><div><small>运行交付</small><strong>打包并进入 Unity 类型化运行时</strong></div></div>
+        </div>
+        <div class="workflow-artifact"><span>main.html</span><b>CHECK PASSED</b><span>xingque.pkg.bin</span></div>
+      </div>
+    </section>
+
+    <section class="manifesto section-shell reveal">
+      <p class="section-index">01 / 项目判断</p>
+      <div class="manifesto-grid">
+        <h2>不是让 AI 完成一个环节，而是让 LLM 接管整条 UI 开发链路。</h2>
+        <div class="manifesto-copy">
+          <p>传统方案把视觉设计、界面搭建、代码接线和运行验证分散在不同工具中，LLM 通常只能参与其中一小段。</p>
+          <p>Yio 用标准文本和可执行工具把这些环节连成闭环，使 LLM 能在同一个对话中持续生成、检查、修改并交付。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="demo-section" id="demo">
+      <div class="section-shell demo-heading reveal">
+        <div>
+          <p class="section-index">02 / 在线体验</p>
+          <h2>同一套 Yio 源码，直接在网页中查看。</h2>
+        </div>
+        <p>以下三页均按 Yio HTML/CSS 围栏编写，并已通过本地 `yio check`。网页展示设计期预览；真实自绘运行时将在 Unity 实机素材补齐后替换占位。</p>
+      </div>
+
+      <div class="demo-workbench section-shell reveal">
+        <div class="demo-toolbar">
+          <div class="demo-tabs" role="tablist" aria-label="Demo 页面">
+            <button class="demo-tab is-active" data-demo="main" data-title="主界面" data-description="场景化 HUD、角色状态、任务追踪与战斗快捷栏。">主界面</button>
+            <button class="demo-tab" data-demo="inventory" data-title="背包界面" data-description="焦点装备展示、分类轮盘、属性说明与底部物品栏。">背包界面</button>
+            <button class="demo-tab" data-demo="leaderboard" data-title="排行榜界面" data-description="赛季英雄奖台、个人名次与实时滚动榜单。">排行榜</button>
+          </div>
+          <div class="demo-state"><span class="status-dot"></span><span>YIO FENCE PASSED</span></div>
+        </div>
+
+        <div class="demo-stage">
+          <div class="frame-shell">
+            <iframe id="demo-frame" title="星阙行纪主界面" src="yio-demo/ui/xingque/main.html"></iframe>
+          </div>
+          <div class="demo-caption">
+            <div><small>当前页面</small><strong id="demo-title">主界面</strong></div>
+            <p id="demo-description">远征任务、玩家状态、资源与队伍信息。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="innovation section-shell" id="innovation">
+      <div class="innovation-title reveal">
+        <p class="section-index">03 / 核心创新</p>
+        <h2>不是套一层 AI，而是重做 AI 与游戏 UI 之间的接口。</h2>
+      </div>
+      <div class="innovation-list">
+        <article class="innovation-row reveal">
+          <span class="innovation-no">01</span>
+          <h3>标准语义作为共同语言</h3>
+          <p>AI、人类和工具链共同读写 HTML/CSS。模型可以利用已有 Web 先验理解结构、布局与视觉，不再学习引擎私有资源格式。</p>
+        </article>
+        <article class="innovation-row reveal">
+          <span class="innovation-no">02</span>
+          <h3>围栏把概率输出变成确定输入</h3>
+          <p>标签、属性、CSS 值域和控件结构都有机器校验。超出能力范围时明确失败，不把问题留到运行时。</p>
+        </article>
+        <article class="innovation-row reveal">
+          <span class="innovation-no">03</span>
+          <h3>类型化对象树进入业务代码</h3>
+          <p>设计期的标签和 ARIA 语义稳定映射为 Button、Slider、ListView 等对象，CSS 改样式但不改变对象身份。</p>
+        </article>
+        <article class="innovation-row reveal">
+          <span class="innovation-no">04</span>
+          <h3>Rust 核心连接不同游戏引擎</h3>
+          <p>布局、文本、动画、滚动、事件和渲染意图由共享核心计算，Unity 后端只负责输入、资源与原生渲染对象映射。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="architecture">
+      <div class="section-shell reveal">
+        <p class="section-index">04 / 技术路径</p>
+        <h2>从自然语言到游戏运行时，每一步都有明确产物。</h2>
+        <div class="architecture-flow" aria-label="Yio 技术流程">
+          <div class="flow-node"><span>01</span><strong>自然语言需求</strong><small>AI 理解游戏功能与视觉目标</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node"><span>02</span><strong>HTML CSS 源码</strong><small>可读 可审查 可版本管理</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node"><span>03</span><strong>Fence 校验</strong><small>拒绝不确定与不支持语义</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node"><span>04</span><strong>二进制 UI 包</strong><small>图集 字体 模板与样式</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node"><span>05</span><strong>Rust 自绘核心</strong><small>布局 交互 动画 渲染树</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node"><span>06</span><strong>Unity 后端</strong><small>类型化 API 与真实游戏运行</small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="process section-shell" id="process">
+      <div class="process-intro reveal">
+        <div>
+          <p class="section-index">05 / AI 共创记录</p>
+          <h2>这次评审 Demo 的生成过程被完整保留。</h2>
+        </div>
+        <p>不是只展示最终页面。需求选择、结构拆解、围栏错误、修复动作和最终验证结果均可回看，让评委看到 AI 如何在工程约束内完成工作。</p>
+      </div>
+
+      <div class="process-grid">
+        <div class="timeline reveal">
+          <article><span>01</span><div><strong>方向对齐</strong><p>在首轮冷色科技方案反馈不理想后，重新确定东方幻想冒险题材，采用暖宣纸、墨青、朱砂与旧金。</p></div></article>
+          <article><span>02</span><div><strong>信息架构</strong><p>拆分主界面、背包、排行榜三种典型游戏 UI，分别覆盖任务入口、物品管理和数据榜单。</p></div></article>
+          <article><span>03</span><div><strong>围栏内生成</strong><p>仅使用 Yio 支持的标签、Flex 布局、渐变、阴影、动画和状态选择器，不依赖 Grid、SVG 或第三方组件。</p></div></article>
+          <article><span>04</span><div><strong>机器校验</strong><p>第一轮发现 5 个错误与 10 个画序提示，包括多背景渐变、越界伪类和定位层级不明确。</p></div></article>
+          <article><span>05</span><div><strong>根因修复</strong><p>拆除不支持的复合背景，删除 `:last-child`，并显式声明定位与 z-index，使浏览器与运行时画序一致。</p></div></article>
+          <article><span>06</span><div><strong>主题重构</strong><p>将《寂光远征》整体重构为《星阙行纪》，同步修改世界观、排版、容器形态、交互强调与官网叙事。</p></div></article>
+          <article><span>07</span><div><strong>游戏化重构</strong><p>参考现代 RPG 的边缘 HUD、图标导航、装备槽与赛季榜单结构，接入 game-icons.net 开源素材，减少网页卡片感。</p></div></article>
+          <article><span>08</span><div><strong>静态交付</strong><p>评审官网直接引用同一份 Yio 页面源码，并展示源码片段、校验结果和 Unity 实机素材占位。</p></div></article>
+        </div>
+
+        <div class="source-panel reveal">
+          <div class="source-head">
+            <div><small>LIVE SOURCE</small><strong id="source-name">main.html</strong></div>
+            <button id="copy-source" type="button">复制源码片段</button>
+          </div>
+          <pre><code id="source-code">正在读取 Yio 源文件…</code></pre>
+          <p class="source-note">源码来自当前在线展示页面。部署到静态托管后仍可直接读取，无独立演示副本。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="evidence section-shell" id="evidence">
+      <div class="evidence-copy reveal">
+        <p class="section-index">06 / 验证证据</p>
+        <h2>展示结果，也展示它为什么可信。</h2>
+        <p>本次新增三页均经过 Yio CLI 围栏验证。项目整体还具备增量与全量布局对拍、浏览器与核心矩形差分、ABI 尺寸断言、包格式版本门和 CI 静态检查。</p>
+      </div>
+      <div class="terminal reveal" role="img" aria-label="Yio check 校验结果">
+        <div class="terminal-head"><span></span><span></span><span></span><b>yio check</b></div>
+        <pre><code>$ yio check contest/yio-demo --format json
+
+{
+  "command": "check",
+  "format_version": 1,
+  "success": true,
+  "summary": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "message": "workspace valid"
+}</code></pre>
+      </div>
+    </section>
+
+    <section class="runtime section-shell">
+      <div class="runtime-head reveal">
+        <div>
+          <p class="section-index">07 / Unity 实机</p>
+          <h2>预留真实运行时证据位。</h2>
+        </div>
+        <p>当前电脑未安装 Unity，以下区域保留为实机截图占位。后续应替换为相同三页在 Unity 中运行的截图，并补充一段完整操作录屏。</p>
+      </div>
+      <div class="runtime-grid">
+        <div class="shot-placeholder reveal"><span>UNITY CAPTURE 01</span><strong>主界面实机截图</strong><small>建议展示任务入口、动画与输入响应</small></div>
+        <div class="shot-placeholder reveal"><span>UNITY CAPTURE 02</span><strong>背包实机截图</strong><small>建议展示选择、滚动与类型化事件</small></div>
+        <div class="shot-placeholder reveal"><span>UNITY CAPTURE 03</span><strong>排行榜实机截图</strong><small>建议展示长列表与帧率信息</small></div>
+      </div>
+    </section>
+
+    <section class="closing section-shell reveal">
+      <p class="section-index">FINAL</p>
+      <h2>Yio 要交付的不是一张 AI 生成图，而是一条可验证的游戏 UI 生产链路。</h2>
+      <div class="closing-actions">
+        <a class="button button-primary" href="#demo">再次体验 Demo</a>
+        <a class="button button-secondary" href="README.md">查看本地运行说明</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer section-shell">
+    <div class="wordmark-copy"><strong>Yio</strong><small>HTML CSS · RUST CORE · UNITY</small></div>
+    <p>游戏图标来自 game-icons.net，按 CC BY 3.0 使用 · AI 大赛静态评审站 · 2026 年 9 月 29 日</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

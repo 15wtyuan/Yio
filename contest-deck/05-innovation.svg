@@ -1,0 +1,67 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" font-family="'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif">
+  <defs>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="#F8FAFC"/>
+
+  <!-- ===== Header ===== -->
+  <text x="1520" y="80" text-anchor="end" font-size="13" fill="#94A3B8">Yio · 跨引擎游戏 UI 框架</text>
+  <rect x="80" y="58" width="116" height="34" rx="17" fill="#F5F3FF" stroke="#DDD6FE"/>
+  <text x="138" y="80" text-anchor="middle" font-size="15" font-weight="600" fill="#6D28D9">项目创新性</text>
+  <text x="80" y="146" font-size="42" font-weight="700" fill="#0F172A">五项创新：从「能生成」到「可靠的工程资产」</text>
+  <text x="80" y="188" font-size="19" fill="#64748B">标准语义提供 AI 先验，严格围栏提供工程确定性 —— 这是项目最核心的创新</text>
+  <line x1="80" y1="208" x2="1520" y2="208" stroke="#E2E8F0"/>
+
+  <!-- ===== Innovation 1: hero card ===== -->
+  <rect x="80" y="236" width="1440" height="234" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="128" cy="280" r="18" fill="#0F172A"/>
+  <text x="128" y="286" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">1</text>
+  <text x="166" y="288" font-size="18" font-weight="700" fill="#0F172A">标准 HTML/CSS 子集：人、AI、工具链的共同中间表示</text>
+  <text x="166" y="318" font-size="13.5" fill="#64748B">关注的不只是「让模型生成界面」，更是「生成结果如何成为可靠的游戏工程资产」——不是把网页搬进游戏</text>
+
+  <rect x="166" y="340" width="640" height="74" rx="10" fill="#EFF6FF"/>
+  <text x="190" y="370" font-size="14" font-weight="700" fill="#1D4ED8">标准语义 → AI 先验</text>
+  <text x="190" y="396" font-size="12.5" fill="#475569">通用大模型的 Web 知识直接可用，能生成、也能预判画面</text>
+  <text x="828" y="386" text-anchor="middle" font-size="22" font-weight="700" fill="#94A3B8">×</text>
+  <rect x="850" y="340" width="640" height="74" rx="10" fill="#FFFBEB"/>
+  <text x="874" y="370" font-size="14" font-weight="700" fill="#B45309">严格围栏 → 工程确定性</text>
+  <text x="874" y="396" font-size="12.5" fill="#475569">只选择能在自绘运行时完整兑现的语义，越界即明确报错</text>
+
+  <rect x="166" y="428" width="1324" height="34" rx="17" fill="#F1F5F9"/>
+  <text x="828" y="450" text-anchor="middle" font-size="13" font-weight="600" fill="#334155">可读 · 可比较 · 可版本管理 —— 生成结果直接成为游戏工程资产</text>
+
+  <!-- ===== Innovation 2 ===== -->
+  <rect x="85" y="500" width="700" height="146" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="125" cy="544" r="16" fill="#059669"/>
+  <text x="125" y="550" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">2</text>
+  <text x="153" y="550" font-size="16.5" font-weight="700" fill="#0F172A">AI 生成：从概率结果 → 可验证流水线</text>
+  <text x="113" y="586" font-size="13" fill="#64748B">Fence 语法校验 · CLI 资源校验 · 浏览器矩形差分 · 增量/全量对拍 · 产物导入验证</text>
+  <text x="113" y="612" font-size="13" fill="#64748B">AI 执行命令、读结构化结果、定位、修复、再验证 —— 从建议者变成闭环的工程协作者</text>
+
+  <!-- ===== Innovation 3 ===== -->
+  <rect x="815" y="500" width="700" height="146" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="855" cy="544" r="16" fill="#7C3AED"/>
+  <text x="855" y="550" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">3</text>
+  <text x="883" y="550" font-size="16.5" font-weight="700" fill="#0F172A">设计期 HTML，运行时强类型对象</text>
+  <text x="843" y="586" font-size="13" fill="#64748B">HTML 投影为 Button · Slider · ListView 等稳定类型，无全局句柄、无字符串查找</text>
+  <text x="843" y="612" font-size="13" fill="#64748B">CSS 改布局与视觉，但不改对象身份 —— 利于 AI 推理与大型项目长期维护</text>
+
+  <!-- ===== Innovation 4 ===== -->
+  <rect x="85" y="662" width="700" height="146" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="125" cy="706" r="16" fill="#D97706"/>
+  <text x="125" y="712" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">4</text>
+  <text x="153" y="712" font-size="16.5" font-weight="700" fill="#0F172A">Rust 跨引擎核心与增量自绘管线</text>
+  <text x="113" y="748" font-size="13" fill="#64748B">持久布局树 · 文本测量缓存 · 增量渲染 · 虚拟列表 · 图集逐出，稳定 C ABI 接入引擎</text>
+  <text x="113" y="774" font-size="13" fill="#64748B">证明文本 DSL 与游戏性能不冲突：可生成性、确定性、运行效率三者兼得</text>
+
+  <!-- ===== Innovation 5 ===== -->
+  <rect x="815" y="662" width="700" height="146" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="855" cy="706" r="16" fill="#2563EB"/>
+  <text x="855" y="712" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">5</text>
+  <text x="883" y="712" font-size="16.5" font-weight="700" fill="#0F172A">AI 能力产品化，而非留在开发过程</text>
+  <text x="843" y="748" font-size="13" fill="#64748B">手册 / 围栏参考 / API 配方随工具分发；stdout 单一 JSON，退出码区分内容错误与工具错误</text>
+  <text x="843" y="774" font-size="13" fill="#64748B">不同模型、不同 IDE、不同团队均可复用，不依赖作者本人操作</text>
+</svg>

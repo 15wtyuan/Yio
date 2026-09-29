@@ -1,0 +1,69 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" font-family="'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif">
+  <defs>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="#F8FAFC"/>
+
+  <!-- ===== Header ===== -->
+  <text x="1520" y="80" text-anchor="end" font-size="13" fill="#94A3B8">Yio · 跨引擎游戏 UI 框架</text>
+  <rect x="80" y="58" width="100" height="34" rx="17" fill="#EFF6FF" stroke="#BFDBFE"/>
+  <text x="130" y="80" text-anchor="middle" font-size="15" font-weight="600" fill="#1D4ED8">关键决策</text>
+  <text x="80" y="146" font-size="42" font-weight="700" fill="#0F172A">四个关键决策：把 AI 当第一用户来设计</text>
+  <text x="80" y="188" font-size="19" fill="#64748B">不把 AI 当作附加在传统工具上的聊天入口，而是从底层重新设计 UI 的表达与验证方式</text>
+  <line x1="80" y1="208" x2="1520" y2="208" stroke="#E2E8F0"/>
+
+  <!-- ===== Decision 1 (blue) ===== -->
+  <rect x="80" y="236" width="1440" height="128" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="128" cy="300" r="18" fill="#2563EB"/>
+  <text x="128" y="306" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">1</text>
+  <text x="166" y="288" font-size="18" font-weight="700" fill="#0F172A">标准 HTML/CSS 子集，不自创 DSL</text>
+  <text x="166" y="322" font-size="13.5" fill="#64748B">AI 对 HTML/CSS 的先验远高于任何引擎私有格式，不仅能生成文本，还能较准确地推断布局与视觉结果</text>
+  <text x="166" y="346" font-size="13.5" fill="#64748B">同时用围栏控制边界，避免「表面兼容 Web、实际处处不一致」</text>
+  <rect x="1020" y="256" width="480" height="88" rx="10" fill="#EFF6FF"/>
+  <circle cx="1048" cy="286" r="3.5" fill="#2563EB"/>
+  <text x="1062" y="291" font-size="13.5" fill="#334155">AI 不仅能写，还能预判画面</text>
+  <circle cx="1048" cy="316" r="3.5" fill="#2563EB"/>
+  <text x="1062" y="321" font-size="13.5" fill="#334155">生成即可靠，不靠反复试</text>
+
+  <!-- ===== Decision 2 (purple) ===== -->
+  <rect x="80" y="380" width="1440" height="128" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="128" cy="444" r="18" fill="#7C3AED"/>
+  <text x="128" y="450" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">2</text>
+  <text x="166" y="432" font-size="18" font-weight="700" fill="#0F172A">语义决定类型，CSS 只管视觉与布局</text>
+  <text x="166" y="466" font-size="13.5" fill="#64748B">HTML 标签与 ARIA 角色决定稳定类型，CSS 只负责视觉与布局策略——修改样式不会把一个对象</text>
+  <text x="166" y="490" font-size="13.5" fill="#64748B">从按钮变成容器，界面结构保持稳定</text>
+  <rect x="1020" y="400" width="480" height="88" rx="10" fill="#F5F3FF"/>
+  <circle cx="1048" cy="430" r="3.5" fill="#7C3AED"/>
+  <text x="1062" y="435" font-size="13.5" fill="#334155">运行时 API 保持强类型</text>
+  <circle cx="1048" cy="460" r="3.5" fill="#7C3AED"/>
+  <text x="1062" y="465" font-size="13.5" fill="#334155">AI 与业务代码都更容易推理</text>
+
+  <!-- ===== Decision 3 (amber) ===== -->
+  <rect x="80" y="524" width="1440" height="128" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="128" cy="588" r="18" fill="#D97706"/>
+  <text x="128" y="594" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">3</text>
+  <text x="166" y="576" font-size="18" font-weight="700" fill="#0F172A">坚持自绘与跨引擎核心</text>
+  <text x="166" y="610" font-size="13.5" fill="#64748B">不把 Unity 的 GameObject 或某个引擎的组件模型扩散到公共层；布局、文本、滚动、动画由 Rust</text>
+  <text x="166" y="634" font-size="13.5" fill="#64748B">核心统一计算，引擎后端只负责执行</text>
+  <rect x="1020" y="544" width="480" height="88" rx="10" fill="#FFFBEB"/>
+  <circle cx="1048" cy="574" r="3.5" fill="#D97706"/>
+  <text x="1062" y="579" font-size="13.5" fill="#334155">同一份 UI 包，各引擎一致</text>
+  <circle cx="1048" cy="604" r="3.5" fill="#D97706"/>
+  <text x="1062" y="609" font-size="13.5" fill="#334155">换引擎、多引擎，不用重做</text>
+
+  <!-- ===== Decision 4 (green) ===== -->
+  <rect x="80" y="668" width="1440" height="128" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="128" cy="732" r="18" fill="#059669"/>
+  <text x="128" y="738" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">4</text>
+  <text x="166" y="720" font-size="18" font-weight="700" fill="#0F172A">以「AI 能否安全完成闭环」为验收标准</text>
+  <text x="166" y="754" font-size="13.5" fill="#64748B">手册、参考与修错方法随 CLI 脚手架分发给消费侧 AI；命令支持结构化 JSON 输出与明确退出码，</text>
+  <text x="166" y="778" font-size="13.5" fill="#64748B">AI 无需人工解读即可自行判断执行结果</text>
+  <rect x="1020" y="688" width="480" height="88" rx="10" fill="#ECFDF5"/>
+  <circle cx="1048" cy="718" r="3.5" fill="#059669"/>
+  <text x="1062" y="723" font-size="13.5" fill="#334155">自动区分：成功 / 内容错误 / 工具错误</text>
+  <circle cx="1048" cy="748" r="3.5" fill="#059669"/>
+  <text x="1062" y="753" font-size="13.5" fill="#334155">闭环无需人盯，全程可自动化</text>
+</svg>

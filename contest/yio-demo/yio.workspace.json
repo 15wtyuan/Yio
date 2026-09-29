@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "output_dir": "dist",
+  "design": {
+    "w": 1920.0,
+    "h": 1080.0
+  },
+  "match_mode": "fit-width",
+  "packages": [
+    {
+      "name": "xingque",
+      "dirs": [
+        "ui/xingque"
+      ],
+      "html": []
+    }
+  ],
+  "atlases": [
+    {
+      "name": "game-icons",
+      "standalone": false,
+      "dirs": [
+        "res/icons"
+      ],
+      "max_size": 1024,
+      "padding": 4
+    }
+  ],
+  "fonts": [
+    {
+      "family": "LXGWWenKai",
+      "file": "../../showcase/res/fonts/LXGWWenKai.ttf",
+      "default": true,
+      "fallback": false
+    },
+    {
+      "family": "JetBrainsMono",
+      "file": "../../showcase/res/fonts/JetBrainsMono.ttf",
+      "default": false,
+      "fallback": false
+    }
+  ]
+}

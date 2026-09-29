@@ -1,0 +1,116 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" font-family="'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif">
+  <rect width="1600" height="900" fill="#F8FAFC"/>
+
+  <!-- ===== Header ===== -->
+  <text x="1520" y="80" text-anchor="end" font-size="13" fill="#94A3B8">Yio · 跨引擎游戏 UI 框架</text>
+  <rect x="80" y="58" width="132" height="34" rx="17" fill="#EFF6FF" stroke="#BFDBFE"/>
+  <text x="146" y="80" text-anchor="middle" font-size="15" font-weight="600" fill="#1D4ED8">方案 · 新链路</text>
+  <text x="80" y="146" font-size="42" font-weight="700" fill="#0F172A">从一页 HTML，到引擎里跑起来的界面</text>
+  <text x="80" y="188" font-size="19" fill="#64748B">开发者与 AI 写同一份 HTML/CSS —— 校验、打包、运行，一条线走完</text>
+  <line x1="80" y1="208" x2="1520" y2="208" stroke="#E2E8F0"/>
+
+  <!-- ===== source hint ===== -->
+  <text x="220" y="282" text-anchor="middle" font-size="14" fill="#64748B">开发者 / AI</text>
+  <line x1="220" y1="292" x2="220" y2="310" stroke="#94A3B8" stroke-width="2"/>
+  <polygon points="220,316 214,306 226,306" fill="#94A3B8"/>
+
+  <!-- ===== Node 1: HTML/CSS ===== -->
+  <rect x="100" y="320" width="240" height="200" rx="16" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+  <rect x="190" y="344" width="60" height="60" rx="14" fill="#EFF6FF"/>
+  <g stroke="#2563EB" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M206,364 L196,374 L206,384"/>
+    <path d="M230,364 L240,374 L230,384"/>
+    <line x1="226" y1="360" x2="214" y2="388"/>
+  </g>
+  <text x="220" y="448" text-anchor="middle" font-size="20" font-weight="700" fill="#0F172A">HTML / CSS</text>
+  <text x="220" y="480" text-anchor="middle" font-size="13" fill="#64748B">人和 AI 共用的语言</text>
+
+  <line x1="348" y1="420" x2="368" y2="420" stroke="#94A3B8" stroke-width="4"/>
+  <polygon points="376,420 366,413 366,427" fill="#94A3B8"/>
+
+  <!-- ===== Node 2: Fence ===== -->
+  <rect x="390" y="320" width="240" height="200" rx="16" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+  <rect x="480" y="344" width="60" height="60" rx="14" fill="#FFFBEB"/>
+  <g stroke="#D97706" stroke-width="2.2" stroke-linecap="round">
+    <line x1="497" y1="358" x2="497" y2="392"/>
+    <line x1="508" y1="358" x2="508" y2="392"/>
+    <line x1="519" y1="358" x2="519" y2="392"/>
+    <line x1="492" y1="365" x2="524" y2="365"/>
+    <line x1="492" y1="380" x2="524" y2="380"/>
+  </g>
+  <text x="510" y="448" text-anchor="middle" font-size="20" font-weight="700" fill="#0F172A">围栏校验</text>
+  <text x="510" y="480" text-anchor="middle" font-size="13" fill="#64748B">越界的写法进不来</text>
+
+  <line x1="638" y1="420" x2="658" y2="420" stroke="#94A3B8" stroke-width="4"/>
+  <polygon points="666,420 656,413 656,427" fill="#94A3B8"/>
+
+  <!-- ===== Node 3: Pack ===== -->
+  <rect x="680" y="320" width="240" height="200" rx="16" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+  <rect x="770" y="344" width="60" height="60" rx="14" fill="#E0F2FE"/>
+  <g stroke="#0284C7" stroke-width="2.2" fill="none" stroke-linejoin="round">
+    <path d="M782,364 L782,382 L795,388 L808,382 L808,364 L795,358 Z"/>
+    <path d="M782,364 L795,370 L808,364"/>
+    <line x1="795" y1="370" x2="795" y2="388"/>
+  </g>
+  <text x="800" y="448" text-anchor="middle" font-size="20" font-weight="700" fill="#0F172A">一键打包</text>
+  <text x="800" y="480" text-anchor="middle" font-size="13" fill="#64748B">UI 包 · 图集 · 字体</text>
+
+  <line x1="928" y1="420" x2="948" y2="420" stroke="#94A3B8" stroke-width="4"/>
+  <polygon points="956,420 946,413 946,427" fill="#94A3B8"/>
+
+  <!-- ===== Node 4: Runtime ===== -->
+  <rect x="970" y="320" width="240" height="200" rx="16" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+  <rect x="1060" y="344" width="60" height="60" rx="14" fill="#E0E7FF"/>
+  <g stroke="#4F46E5" stroke-width="2" fill="none">
+    <rect x="1074" y="360" width="28" height="28" rx="3"/>
+    <rect x="1082" y="368" width="12" height="12"/>
+    <line x1="1081" y1="354" x2="1081" y2="360"/><line x1="1088" y1="354" x2="1088" y2="360"/><line x1="1095" y1="354" x2="1095" y2="360"/>
+    <line x1="1081" y1="388" x2="1081" y2="394"/><line x1="1088" y1="388" x2="1088" y2="394"/><line x1="1095" y1="388" x2="1095" y2="394"/>
+    <line x1="1068" y1="368" x2="1074" y2="368"/><line x1="1068" y1="380" x2="1074" y2="380"/>
+    <line x1="1102" y1="368" x2="1108" y2="368"/><line x1="1102" y1="380" x2="1108" y2="380"/>
+  </g>
+  <text x="1090" y="448" text-anchor="middle" font-size="20" font-weight="700" fill="#0F172A">Rust 运行时</text>
+  <text x="1090" y="480" text-anchor="middle" font-size="13" fill="#64748B">布局 · 动画 · 事件</text>
+
+  <line x1="1218" y1="420" x2="1238" y2="420" stroke="#94A3B8" stroke-width="4"/>
+  <polygon points="1246,420 1236,413 1236,427" fill="#94A3B8"/>
+
+  <!-- ===== Node 5: Engine ===== -->
+  <rect x="1260" y="320" width="240" height="200" rx="16" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+  <rect x="1350" y="344" width="60" height="60" rx="14" fill="#ECFDF5"/>
+  <circle cx="1380" cy="374" r="16" stroke="#059669" stroke-width="2.2" fill="none"/>
+  <polygon points="1375,366 1389,374 1375,382" fill="#059669"/>
+  <text x="1380" y="448" text-anchor="middle" font-size="20" font-weight="700" fill="#0F172A">游戏引擎跑起来</text>
+  <text x="1380" y="480" text-anchor="middle" font-size="13" fill="#64748B">一份资产，跨引擎</text>
+
+  <!-- ===== reject branch + AI fix loop ===== -->
+  <line x1="510" y1="524" x2="510" y2="574" stroke="#DC2626" stroke-width="2" stroke-dasharray="5 5"/>
+  <polygon points="510,580 504,570 516,570" fill="#DC2626"/>
+  <rect x="410" y="586" width="200" height="44" rx="22" fill="#FEF2F2" stroke="#FECACA"/>
+  <text x="510" y="614" text-anchor="middle" font-size="14.5" font-weight="600" fill="#B91C1C"><tspan font-size="17">✗</tspan> 越界：精确报错</text>
+
+  <path d="M410,608 L220,608 L220,534" stroke="#94A3B8" stroke-width="2" stroke-dasharray="5 5" fill="none"/>
+  <polygon points="220,526 214,536 226,536" fill="#94A3B8"/>
+  <text x="315" y="598" text-anchor="middle" font-size="13" fill="#64748B">报错喂回 AI，自动修正</text>
+
+  <!-- ===== engine extension ===== -->
+  <line x1="1380" y1="524" x2="1380" y2="574" stroke="#94A3B8" stroke-width="2" stroke-dasharray="5 5"/>
+  <polygon points="1380,580 1374,570 1386,570" fill="#94A3B8"/>
+  <rect x="1280" y="586" width="200" height="44" rx="22" fill="#FFFFFF" stroke="#CBD5E1" stroke-dasharray="6 4"/>
+  <text x="1380" y="614" text-anchor="middle" font-size="14.5" fill="#64748B">Godot 接入中</text>
+
+  <!-- ===== toolchain badges ===== -->
+  <text x="800" y="738" text-anchor="middle" font-size="13" fill="#94A3B8">配套工具链</text>
+  <g font-size="15" text-anchor="middle">
+    <rect x="277" y="760" width="190" height="44" rx="22" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <text x="372" y="788" fill="#334155">yio CLI</text>
+    <rect x="491" y="760" width="190" height="44" rx="22" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <text x="586" y="788" fill="#334155">桌面打包器 GUI</text>
+    <rect x="705" y="760" width="190" height="44" rx="22" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <text x="800" y="788" fill="#334155">Unity UPM 包</text>
+    <rect x="919" y="760" width="190" height="44" rx="22" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <text x="1014" y="788" fill="#334155">AI Skills 手册</text>
+    <rect x="1133" y="760" width="190" height="44" rx="22" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <text x="1228" y="788" fill="#334155">浏览器布局对拍</text>
+  </g>
+</svg>

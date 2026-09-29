@@ -1,0 +1,143 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" font-family="'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif">
+  <defs>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="#F8FAFC"/>
+
+  <!-- ===== Header ===== -->
+  <text x="1520" y="80" text-anchor="end" font-size="13" fill="#94A3B8">Yio · 跨引擎游戏 UI 框架</text>
+  <rect x="80" y="58" width="132" height="34" rx="17" fill="#FEF2F2" stroke="#FECACA"/>
+  <text x="146" y="80" text-anchor="middle" font-size="15" font-weight="600" fill="#DC2626">痛点 · 旧路径</text>
+  <text x="80" y="146" font-size="42" font-weight="700" fill="#0F172A">旧的 UI 生产路径：AI 进不了生产线</text>
+  <text x="80" y="188" font-size="19" fill="#64748B">生成式 AI 已能快速编写网页，但在游戏 UI 领域，往往止步于<tspan fill="#DC2626" font-weight="600">「代码片段」</tspan>与<tspan fill="#DC2626" font-weight="600">「静态效果图」</tspan>，距离真正进入生产流程仍有明显断层。</text>
+  <line x1="80" y1="208" x2="1520" y2="208" stroke="#E2E8F0"/>
+
+  <!-- ===== AI box (outside the flow) ===== -->
+  <rect x="80" y="232" width="250" height="170" rx="14" fill="#FEF2F2" stroke="#DC2626" stroke-width="1.6" stroke-dasharray="7 5"/>
+  <rect x="96" y="250" width="96" height="28" rx="14" fill="#DC2626"/>
+  <text x="144" y="269" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">生成式 AI</text>
+  <text x="96" y="308" font-size="14.5" font-weight="600" fill="#16A34A">✓ 写网页：又快又准</text>
+  <text x="96" y="334" font-size="14.5" font-weight="700" fill="#DC2626">✗ 游戏 UI：处处碰壁</text>
+  <text x="96" y="356" font-size="13" fill="#64748B">现状止步于：</text>
+  <rect x="96" y="362" width="204" height="30" rx="7" fill="#FFFFFF" stroke="#FECACA"/>
+  <text x="198" y="382" text-anchor="middle" font-size="13.5" font-weight="600" fill="#B91C1C">代码片段 · 静态效果图</text>
+
+  <!-- broken link -->
+  <line x1="336" y1="317" x2="424" y2="317" stroke="#DC2626" stroke-width="2" stroke-dasharray="6 6"/>
+  <circle cx="380" cy="317" r="13" fill="#FFFFFF" stroke="#DC2626" stroke-width="2"/>
+  <line x1="375" y1="312" x2="385" y2="322" stroke="#DC2626" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="385" y1="312" x2="375" y2="322" stroke="#DC2626" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="380" y="294" text-anchor="middle" font-size="15" font-weight="700" fill="#DC2626">断层</text>
+
+  <!-- ===== Traditional pipeline ===== -->
+  <text x="430" y="224" font-size="13" fill="#94A3B8">传统生产流程 —— 全程依赖人工与引擎专属资产</text>
+
+  <!-- Box 1 -->
+  <rect x="430" y="232" width="340" height="170" rx="14" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#soft)"/>
+  <circle cx="464" cy="266" r="16" fill="#0F172A"/>
+  <text x="464" y="272" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">1</text>
+  <text x="490" y="272" font-size="18" font-weight="700" fill="#0F172A">引擎编辑器，手工拼装</text>
+  <text x="452" y="306" font-size="14" fill="#64748B">拖控件 · 调层级 · 对像素</text>
+  <text x="452" y="330" font-size="14" fill="#64748B">每次改版以「人天」计</text>
+  <text x="452" y="354" font-size="14" fill="#64748B">需求一变，几乎重拼一遍</text>
+  <g stroke="#94A3B8" stroke-width="2" fill="none">
+    <rect x="714" y="248" width="40" height="32" rx="4"/>
+    <line x1="714" y1="258" x2="754" y2="258"/>
+    <rect x="720" y="264" width="12" height="10"/>
+    <line x1="738" y1="267" x2="748" y2="267"/>
+    <line x1="738" y1="273" x2="748" y2="273"/>
+  </g>
+
+  <line x1="776" y1="317" x2="794" y2="317" stroke="#94A3B8" stroke-width="2"/>
+  <polygon points="801,317 792,312 792,322" fill="#94A3B8"/>
+
+  <!-- Box 2 -->
+  <rect x="805" y="232" width="340" height="170" rx="14" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#soft)"/>
+  <circle cx="839" cy="266" r="16" fill="#0F172A"/>
+  <text x="839" y="272" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">2</text>
+  <text x="865" y="272" font-size="18" font-weight="700" fill="#0F172A">资产分散，格式私有</text>
+  <text x="827" y="306" font-size="14" fill="#64748B">结构在场景，样式在配置</text>
+  <text x="827" y="330" font-size="14" fill="#64748B">交互在脚本，资源在目录</text>
+  <text x="827" y="354" font-size="14" font-weight="600" fill="#DC2626">私有 / 二进制：AI 读不了、改不动</text>
+  <g stroke="#94A3B8" stroke-width="2" fill="none">
+    <rect x="1101" y="246" width="24" height="30" rx="3"/>
+    <rect x="1093" y="252" width="24" height="30" rx="3" fill="#F8FAFC"/>
+    <line x1="1099" y1="262" x2="1111" y2="262"/>
+    <line x1="1099" y1="268" x2="1111" y2="268"/>
+    <line x1="1099" y1="274" x2="1107" y2="274"/>
+  </g>
+
+  <line x1="1151" y1="317" x2="1169" y2="317" stroke="#94A3B8" stroke-width="2"/>
+  <polygon points="1176,317 1167,312 1167,322" fill="#94A3B8"/>
+
+  <!-- Box 3 -->
+  <rect x="1180" y="232" width="340" height="170" rx="14" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#soft)"/>
+  <circle cx="1214" cy="266" r="16" fill="#0F172A"/>
+  <text x="1214" y="272" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">3</text>
+  <text x="1240" y="272" font-size="18" font-weight="700" fill="#0F172A">运行起来，才见真容</text>
+  <text x="1202" y="306" font-size="14" fill="#64748B">仅凭代码无法预判画面</text>
+  <text x="1202" y="330" font-size="14" fill="#64748B">效果对不对，要进引擎跑</text>
+  <text x="1202" y="354" font-size="14" fill="#64748B">人眼逐项过，反馈回路长</text>
+  <circle cx="1484" cy="264" r="16" stroke="#94A3B8" stroke-width="2" fill="none"/>
+  <polygon points="1479,256 1493,264 1479,272" fill="#94A3B8"/>
+
+  <!-- ===== Pain cards ===== -->
+  <text x="80" y="482" font-size="20" font-weight="700" fill="#0F172A">即使让 AI 硬写脚本塞进流程，也躲不开这五个坑：</text>
+
+  <!-- Card 1 -->
+  <rect x="80" y="502" width="268" height="140" rx="12" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="110" cy="532" r="14" fill="#DC2626"/>
+  <text x="110" y="537" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">1</text>
+  <text x="132" y="538" font-size="17" font-weight="700" fill="#0F172A">组件类型不匹配</text>
+  <line x1="100" y1="566" x2="328" y2="566" stroke="#F1F5F9"/>
+  <text x="100" y="592" font-size="13.5" fill="#64748B">AI 生成的脚本，</text>
+  <text x="100" y="618" font-size="13.5" fill="#64748B">接不上场景里的真实节点</text>
+
+  <!-- Card 2 -->
+  <rect x="373" y="502" width="268" height="140" rx="12" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="403" cy="532" r="14" fill="#DC2626"/>
+  <text x="403" y="537" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">2</text>
+  <text x="425" y="538" font-size="17" font-weight="700" fill="#0F172A">布局语义不一致</text>
+  <line x1="393" y1="566" x2="621" y2="566" stroke="#F1F5F9"/>
+  <text x="393" y="592" font-size="13.5" fill="#64748B">代码里的摆放，</text>
+  <text x="393" y="618" font-size="13.5" fill="#64748B">≠ 运行时的真实排布</text>
+
+  <!-- Card 3 -->
+  <rect x="666" y="502" width="268" height="140" rx="12" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="696" cy="532" r="14" fill="#DC2626"/>
+  <text x="696" y="537" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">3</text>
+  <text x="718" y="538" font-size="17" font-weight="700" fill="#0F172A">引擎版本差异</text>
+  <line x1="686" y1="566" x2="914" y2="566" stroke="#F1F5F9"/>
+  <text x="686" y="592" font-size="13.5" fill="#64748B">同一份脚本，</text>
+  <text x="686" y="618" font-size="13.5" fill="#64748B">换个引擎版本就漂移</text>
+
+  <!-- Card 4 -->
+  <rect x="959" y="502" width="268" height="140" rx="12" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="989" cy="532" r="14" fill="#DC2626"/>
+  <text x="989" y="537" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">4</text>
+  <text x="1011" y="538" font-size="17" font-weight="700" fill="#0F172A">资源遗漏</text>
+  <line x1="979" y1="566" x2="1207" y2="566" stroke="#F1F5F9"/>
+  <text x="979" y="592" font-size="13.5" fill="#64748B">图片、字体、预制体</text>
+  <text x="979" y="618" font-size="13.5" fill="#64748B">引用缺失，运行才发现</text>
+
+  <!-- Card 5 -->
+  <rect x="1252" y="502" width="268" height="140" rx="12" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="1282" cy="532" r="14" fill="#DC2626"/>
+  <text x="1282" y="537" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">5</text>
+  <text x="1304" y="538" font-size="17" font-weight="700" fill="#0F172A">运行行为不可控</text>
+  <line x1="1272" y1="566" x2="1500" y2="566" stroke="#F1F5F9"/>
+  <text x="1272" y="592" font-size="13.5" fill="#64748B">不真正跑起来，</text>
+  <text x="1272" y="618" font-size="13.5" fill="#64748B">永远不知道对不对</text>
+
+  <!-- ===== Bottom summary ===== -->
+  <rect x="80" y="700" width="702" height="100" rx="14" fill="#EFF6FF" stroke="#BFDBFE"/>
+  <text x="431" y="750" text-anchor="middle" font-size="17" font-weight="700" fill="#1E40AF">对人：可视化编辑，所见即所得</text>
+  <text x="431" y="782" text-anchor="middle" font-size="14" fill="#64748B">人类开发者很顺手，但每一步都是手工活</text>
+
+  <rect x="808" y="700" width="712" height="100" rx="14" fill="#FEF2F2" stroke="#FECACA"/>
+  <text x="1164" y="750" text-anchor="middle" font-size="17" font-weight="700" fill="#B91C1C">对 AI：读不了、改不动、猜不准</text>
+  <text x="1164" y="782" text-anchor="middle" font-size="14" fill="#B91C1C" opacity="0.8">缺稳定可读的文本表示 · 难以批量修改 · 无法仅凭代码预判最终画面</text>
+</svg>

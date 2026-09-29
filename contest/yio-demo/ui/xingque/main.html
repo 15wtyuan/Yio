@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <title>星阙行纪 主界面</title>
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    .player-hud { position:relative; z-index:0; }
+    .resource-hud { position:absolute; right:0; top:0; }
+    .quest-hud { position:absolute; right:34px; top:114px; z-index:3; width:300px; padding:18px; }
+    .quest-title { color:#fff0cf; font-size:19px; font-weight:800; margin-top:8px; }
+    .quest-copy { color:#9baba5; font-size:13px; line-height:1.65; margin-top:8px; }
+    .quest-target { display:flex; flex-direction:row; align-items:center; gap:10px; margin-top:14px; padding-top:13px; box-shadow:inset 0 1px 0 rgba(215,177,99,0.12); }
+    .quest-target img { width:27px; height:27px; }
+    .quest-target span { color:#d5b46f; font-size:12px; }
+    .world-label { position:absolute; left:49%; top:28%; z-index:2; display:flex; flex-direction:column; align-items:center; transform:translateX(-50%); text-shadow:0 4px 22px rgba(0,0,0,0.58); }
+    .world-kicker { color:#d4ad66; font-family:JetBrainsMono; font-size:10px; letter-spacing:4px; }
+    .world-name { color:#fff1cf; font-size:48px; font-weight:800; letter-spacing:9px; margin-top:8px; }
+    .world-note { color:#b6c0ba; font-size:14px; margin-top:6px; }
+    .party-hud { position:absolute; left:34px; top:170px; z-index:3; display:flex; flex-direction:column; gap:8px; }
+    .party-member { display:flex; flex-direction:row; align-items:center; gap:10px; width:205px; padding:8px 10px; background-color:rgba(3,16,14,0.68); box-shadow:inset 0 0 0 1px rgba(215,177,99,0.10); }
+    .party-member img { width:34px; height:34px; padding:6px; border-radius:50%; background-color:#173a35; }
+    .party-member div { display:flex; flex-direction:column; gap:2px; }
+    .party-name { color:#ede2c8; font-size:13px; font-weight:800; }
+    .party-role { color:#78908a; font-size:10px; }
+    .action-bar { position:absolute; left:50%; bottom:27px; z-index:4; display:flex; flex-direction:row; align-items:flex-end; gap:9px; transform:translateX(-50%); }
+    .skill { position:relative; display:flex; align-items:center; justify-content:center; width:66px; height:66px; padding:12px; border-radius:50%; background-color:rgba(5,22,19,0.90); box-shadow:inset 0 0 0 2px rgba(211,174,96,0.20), 0 10px 26px rgba(0,0,0,0.30); }
+    .skill:hover { background-color:#173e38; transform:translateY(-4px); }
+    .skill-main { width:80px; height:80px; padding:14px; background-color:#a74b3c; box-shadow:inset 0 0 0 2px rgba(255,230,181,0.31), 0 12px 34px rgba(0,0,0,0.34); }
+    .skill img { width:40px; height:40px; }
+    .skill > img { position:relative; z-index:0; }
+    .skill-main img { width:49px; height:49px; }
+    .skill-key { position:absolute; right:2px; bottom:0; display:flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; color:#e9dcc0; background-color:#071614; font-family:JetBrainsMono; font-size:9px; box-shadow:inset 0 0 0 1px rgba(215,177,99,0.25); }
+    .menu-dock { position:absolute; right:34px; bottom:28px; z-index:4; display:flex; flex-direction:row; gap:7px; }
+    .menu-button { display:flex; align-items:center; justify-content:center; width:48px; height:48px; padding:9px; background-color:rgba(4,18,16,0.82); box-shadow:inset 0 0 0 1px rgba(215,177,99,0.17); }
+    .menu-button:hover { background-color:#183f38; }
+    .menu-button img { width:29px; height:29px; }
+    .location-marker { position:absolute; left:64%; top:54%; z-index:2; display:flex; flex-direction:column; align-items:center; animation:float 2.4s ease-in-out infinite alternate; }
+    .marker-ring { display:flex; align-items:center; justify-content:center; width:58px; height:58px; border-radius:50%; background-color:rgba(169,76,61,0.88); box-shadow:0 0 0 8px rgba(169,76,61,0.13), 0 12px 28px rgba(0,0,0,0.28); }
+    .marker-ring img { width:31px; height:31px; }
+    .marker-name { color:#fff0ce; font-size:12px; font-weight:800; margin-top:9px; text-shadow:0 2px 12px #000; }
+  </style>
+</head>
+<body>
+  <div class="game-screen">
+    <div class="moon"></div><div class="mountain-far"></div><div class="mountain-near"></div><div class="mist"></div>
+    <div class="top-hud">
+      <div class="player-hud"><img class="portrait-ring" src="../../res/icons/character.png" alt="角色"><div class="player-copy"><span class="player-name">林霁</span><span class="player-meta">天枢院 · 星路使 · 38</span><div class="bar"><div class="bar-fill hp"></div></div><div class="bar"><div class="bar-fill mp"></div></div></div></div>
+      <div class="resource-hud"><div class="resource-pill"><img src="../../res/icons/item-gem.png" alt=""><span>18,740</span></div><div class="resource-pill"><img src="../../res/icons/ring.png" alt=""><span>326</span></div></div>
+    </div>
+    <div class="party-hud">
+      <div class="party-member"><img src="../../res/icons/weapon.png" alt=""><div><span class="party-name">赫连秋</span><span class="party-role">剑阵师 · 同行</span></div></div>
+      <div class="party-member"><img src="../../res/icons/item-staff.png" alt=""><div><span class="party-name">沈迭</span><span class="party-role">机关匠 · 待命</span></div></div>
+    </div>
+    <div class="world-label"><span class="world-kicker">太微垣 · 云海天关</span><span class="world-name">问星古道</span><span class="world-note">星门于百年后再次开启</span></div>
+    <div class="location-marker"><div class="marker-ring"><img src="../../res/icons/skill-eye.png" alt=""></div><span class="marker-name">星图残简</span></div>
+    <div class="quest-hud hud-panel"><span class="hud-label">CURRENT QUEST</span><div class="quest-title">寻回星图残简</div><div class="quest-copy">循云海古道登临天关，在蜃兽盘踞的古坛中寻回残简。</div><div class="quest-target"><img src="../../res/icons/item-scroll.png" alt=""><span>残简 0 / 1</span></div></div>
+    <div class="action-bar">
+      <button class="skill"><img src="../../res/icons/skill-step.png" alt=""><span class="skill-key">Q</span></button>
+      <button class="skill"><img src="../../res/icons/skill-eye.png" alt=""><span class="skill-key">E</span></button>
+      <button class="skill skill-main"><img src="../../res/icons/weapon.png" alt=""><span class="skill-key">L</span></button>
+      <button class="skill"><img src="../../res/icons/skill-spin.png" alt=""><span class="skill-key">R</span></button>
+      <button class="skill"><img src="../../res/icons/item-potion.png" alt=""><span class="skill-key">1</span></button>
+    </div>
+    <div class="menu-dock"><button class="menu-button"><img src="../../res/icons/inventory.png" alt=""></button><button class="menu-button"><img src="../../res/icons/character.png" alt=""></button><button class="menu-button"><img src="../../res/icons/settings.png" alt=""></button></div>
+    <div class="bottom-hints"><div class="hint"><span class="key">M</span><span>星图</span></div><div class="hint"><span class="key">TAB</span><span>任务</span></div><div class="hint"><span class="key">I</span><span>百宝匣</span></div></div>
+  </div>
+</body>
+</html>

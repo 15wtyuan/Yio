@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7f0dc"/>
+      <stop offset="1" stop-color="#e8d9b7"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17312d"/>
+      <stop offset="1" stop-color="#0b1d1a"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#5d4930" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0 0 L12 6 L0 12 Z" fill="#75877e"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0 0 L12 6 L0 12 Z" fill="#b64f3e"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#paper)"/>
+  <g opacity="0.055" stroke="#314a43">
+    <path d="M0 140H1600M0 280H1600M0 420H1600M0 560H1600M0 700H1600"/>
+    <path d="M160 0V900M400 0V900M640 0V900M880 0V900M1120 0V900M1360 0V900"/>
+  </g>
+
+  <text x="92" y="92" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="700" fill="#ad4939" letter-spacing="3">传统游戏 UI 生产路径</text>
+  <text x="92" y="157" font-family="Microsoft YaHei, sans-serif" font-size="48" font-weight="800" fill="#1d3530">工具链彼此割裂，AI 只能局部介入</text>
+  <text x="92" y="202" font-family="Microsoft YaHei, sans-serif" font-size="20" fill="#706b5d">设计、搭建、配置、接线与验证分散在多个专属工具和私有格式中</text>
+
+  <g filter="url(#shadow)">
+    <rect x="92" y="278" width="202" height="184" rx="18" fill="#f9f3e3" stroke="#c9b991"/>
+    <rect x="330" y="278" width="202" height="184" rx="18" fill="#f9f3e3" stroke="#c9b991"/>
+    <rect x="568" y="278" width="202" height="184" rx="18" fill="#f9f3e3" stroke="#c9b991"/>
+    <rect x="806" y="278" width="202" height="184" rx="18" fill="#f9f3e3" stroke="#c9b991"/>
+    <rect x="1044" y="278" width="202" height="184" rx="18" fill="#f9f3e3" stroke="#c9b991"/>
+    <rect x="1282" y="278" width="226" height="184" rx="18" fill="url(#dark)" stroke="#35534b"/>
+  </g>
+
+  <g fill="none" stroke="#74877e" stroke-width="3" marker-end="url(#arrow)">
+    <path d="M294 370H322"/>
+    <path d="M532 370H560"/>
+    <path d="M770 370H798"/>
+    <path d="M1008 370H1036"/>
+    <path d="M1246 370H1274"/>
+  </g>
+
+  <g font-family="Microsoft YaHei, sans-serif">
+    <g transform="translate(129 307)">
+      <rect width="62" height="62" rx="13" fill="#2e5149"/>
+      <path d="M18 44l9-24 7 13 11-18 5 29z" fill="none" stroke="#f3dfad" stroke-width="3" stroke-linejoin="round"/>
+      <text x="-2" y="101" font-size="23" font-weight="800" fill="#213832">视觉设计</text>
+      <text x="-2" y="133" font-size="15" fill="#827966">效果图与标注</text>
+    </g>
+    <g transform="translate(367 307)">
+      <rect width="62" height="62" rx="13" fill="#2e5149"/>
+      <rect x="14" y="14" width="34" height="34" rx="3" fill="none" stroke="#f3dfad" stroke-width="3"/>
+      <path d="M14 25h34M26 25v23" stroke="#f3dfad" stroke-width="3"/>
+      <text x="-2" y="101" font-size="23" font-weight="800" fill="#213832">引擎编辑器</text>
+      <text x="-2" y="133" font-size="15" fill="#827966">拖拽层级与组件</text>
+    </g>
+    <g transform="translate(605 307)">
+      <rect width="62" height="62" rx="13" fill="#2e5149"/>
+      <path d="M17 18h12v12H17zm16 0h12v12H33zM17 34h12v12H17zm16 0h12v12H33z" fill="none" stroke="#f3dfad" stroke-width="3"/>
+      <text x="-2" y="101" font-size="23" font-weight="800" fill="#213832">Prefab 层级</text>
+      <text x="-2" y="133" font-size="15" fill="#827966">私有结构与资源</text>
+    </g>
+    <g transform="translate(843 307)">
+      <rect width="62" height="62" rx="13" fill="#2e5149"/>
+      <path d="M18 21h27M18 31h27M18 41h27" stroke="#f3dfad" stroke-width="3"/>
+      <circle cx="27" cy="21" r="4" fill="#f3dfad"/><circle cx="38" cy="31" r="4" fill="#f3dfad"/><circle cx="24" cy="41" r="4" fill="#f3dfad"/>
+      <text x="-2" y="101" font-size="23" font-weight="800" fill="#213832">Inspector</text>
+      <text x="-2" y="133" font-size="15" fill="#827966">样式、引用、事件</text>
+    </g>
+    <g transform="translate(1081 307)">
+      <rect width="62" height="62" rx="13" fill="#2e5149"/>
+      <path d="M25 18L15 31l10 13M37 18l10 13-10 13" fill="none" stroke="#f3dfad" stroke-width="3" stroke-linecap="round"/>
+      <text x="-2" y="101" font-size="23" font-weight="800" fill="#213832">脚本接线</text>
+      <text x="-2" y="133" font-size="15" fill="#827966">查询、事件与状态</text>
+    </g>
+    <g transform="translate(1320 307)">
+      <rect width="62" height="62" rx="13" fill="#b64f3e"/>
+      <path d="M18 39l10 7 18-25" fill="none" stroke="#fff0cc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="-2" y="101" font-size="23" font-weight="800" fill="#fff1d0">运行验证</text>
+      <text x="-2" y="133" font-size="15" fill="#adc0b8">反复进入引擎检查</text>
+    </g>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="112" y="538" width="420" height="176" rx="20" fill="#213e38"/>
+  </g>
+  <circle cx="184" cy="626" r="42" fill="#b64f3e"/>
+  <text x="184" y="637" text-anchor="middle" font-family="Arial, sans-serif" font-size="31" font-weight="800" fill="#fff0ce">AI</text>
+  <text x="250" y="590" font-family="Microsoft YaHei, sans-serif" font-size="17" font-weight="700" fill="#d8b16a" letter-spacing="2">AI 可以生成局部内容</text>
+  <text x="250" y="628" font-family="Microsoft YaHei, sans-serif" font-size="22" font-weight="800" fill="#fff0ce">但无法贯通完整上下文</text>
+  <text x="250" y="665" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#9db0a8">看不到编辑器状态，也无法稳定验证最终画面</text>
+
+  <g fill="none" stroke="#b64f3e" stroke-width="3" stroke-dasharray="10 10" marker-end="url(#arrowRed)">
+    <path d="M532 626C690 626 644 497 696 472"/>
+    <path d="M532 650C850 650 864 516 907 474"/>
+    <path d="M532 674C1040 674 1088 532 1140 474"/>
+  </g>
+  <g font-family="Microsoft YaHei, sans-serif" font-size="14" font-weight="700" fill="#b64f3e">
+    <text x="632" y="574">上下文断裂</text>
+    <text x="836" y="613">配置不可读</text>
+    <text x="1054" y="652">结果不可验证</text>
+  </g>
+
+  <g transform="translate(594 548)" font-family="Microsoft YaHei, sans-serif">
+    <text x="0" y="30" font-size="16" font-weight="700" fill="#9a4739" letter-spacing="2">典型后果</text>
+    <g transform="translate(0 58)">
+      <rect width="278" height="116" rx="14" fill="#f5ead0" stroke="#cbb991"/>
+      <circle cx="32" cy="34" r="8" fill="#b64f3e"/>
+      <text x="54" y="41" font-size="19" font-weight="800" fill="#263b36">组件类型不匹配</text>
+      <text x="30" y="78" font-size="14" fill="#7b725e">代码生成正确，但绑定对象错误</text>
+    </g>
+    <g transform="translate(298 58)">
+      <rect width="278" height="116" rx="14" fill="#f5ead0" stroke="#cbb991"/>
+      <circle cx="32" cy="34" r="8" fill="#b64f3e"/>
+      <text x="54" y="41" font-size="19" font-weight="800" fill="#263b36">预览与运行不一致</text>
+      <text x="30" y="78" font-size="14" fill="#7b725e">布局语义和引擎行为发生偏差</text>
+    </g>
+    <g transform="translate(596 58)">
+      <rect width="278" height="116" rx="14" fill="#f5ead0" stroke="#cbb991"/>
+      <circle cx="32" cy="34" r="8" fill="#b64f3e"/>
+      <text x="54" y="41" font-size="19" font-weight="800" fill="#263b36">资源与事件遗漏</text>
+      <text x="30" y="78" font-size="14" fill="#7b725e">最终仍需人工逐项检查与修补</text>
+    </g>
+  </g>
+
+  <text x="92" y="824" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#756d5a">核心断层：AI 能生成代码，却无法在同一上下文中完成设计、搭建、接线与运行验证。</text>
+</svg>

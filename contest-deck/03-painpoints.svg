@@ -1,0 +1,86 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" font-family="'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif">
+  <defs>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="#F8FAFC"/>
+
+  <!-- ===== Header ===== -->
+  <text x="1520" y="80" text-anchor="end" font-size="13" fill="#94A3B8">Yio · 跨引擎游戏 UI 框架</text>
+  <rect x="80" y="58" width="100" height="34" rx="17" fill="#FEF2F2" stroke="#FECACA"/>
+  <text x="130" y="80" text-anchor="middle" font-size="15" font-weight="600" fill="#DC2626">核心痛点</text>
+  <text x="80" y="146" font-size="42" font-weight="700" fill="#0F172A">Yio 要解决的四个核心痛点</text>
+  <text x="80" y="188" font-size="19" fill="#64748B">每个痛点，都对应一个可验证、已落地的答案</text>
+  <line x1="80" y1="208" x2="1520" y2="208" stroke="#E2E8F0"/>
+
+  <!-- ===== Card 1 (top-left, blue) ===== -->
+  <rect x="85" y="236" width="700" height="270" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="125" cy="280" r="18" fill="#0F172A"/>
+  <text x="125" y="286" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">1</text>
+  <text x="155" y="288" font-size="18" font-weight="700" fill="#0F172A">传统 UI 资产，AI 读不了、改不动</text>
+  <g stroke="#94A3B8" stroke-width="2" fill="none">
+    <rect x="725" y="264" width="30" height="38" rx="3"/>
+    <line x1="732" y1="282" x2="748" y2="282"/>
+    <line x1="732" y1="290" x2="748" y2="290"/>
+  </g>
+  <text x="105" y="322" font-size="13.5" fill="#64748B">界面散落在场景、Prefab、Inspector 配置与二进制资源里，</text>
+  <text x="105" y="344" font-size="13.5" fill="#64748B">AI 读不了、改不动，也无法纳入 Git 版本管理与代码评审</text>
+  <rect x="109" y="366" width="652" height="116" rx="10" fill="#EFF6FF"/>
+  <text x="133" y="396" font-size="13.5" font-weight="700" fill="#1D4ED8">Yio 的答案</text>
+  <text x="133" y="422" font-size="13.5" fill="#334155">界面 = 文本：标准 HTML/CSS 描述结构与样式</text>
+  <text x="133" y="446" font-size="13.5" fill="#334155">AI 直接读、直接改，天然适配 Git 与代码评审</text>
+
+  <!-- ===== Card 2 (top-right, amber) ===== -->
+  <rect x="815" y="236" width="700" height="270" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="855" cy="280" r="18" fill="#0F172A"/>
+  <text x="855" y="286" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">2</text>
+  <text x="885" y="288" font-size="18" font-weight="700" fill="#0F172A">AI 生成结果「不确定」</text>
+  <g stroke="#94A3B8" stroke-width="2" fill="none" stroke-linejoin="round">
+    <path d="M1470,268 L1485,296 L1455,296 Z"/>
+    <line x1="1470" y1="278" x2="1470" y2="286"/>
+    <circle cx="1470" cy="291" r="1.6" fill="#94A3B8"/>
+  </g>
+  <text x="835" y="322" font-size="13.5" fill="#64748B">不支持的写法被静默忽略，或拖到运行时才暴露，</text>
+  <text x="835" y="344" font-size="13.5" fill="#64748B">生成结果无法预测，只能靠人肉反复验证</text>
+  <rect x="839" y="366" width="652" height="116" rx="10" fill="#FFFBEB"/>
+  <text x="863" y="396" font-size="13.5" font-weight="700" fill="#B45309">Yio 的答案</text>
+  <text x="863" y="422" font-size="13.5" fill="#334155">明确 HTML/CSS 围栏：超范围标签、属性、选择器、控件</text>
+  <text x="863" y="446" font-size="13.5" fill="#334155">结构，打包期直接报错 —— 不静默忽略，不拖到运行时</text>
+
+  <!-- ===== Card 3 (bottom-left, purple) ===== -->
+  <rect x="85" y="536" width="700" height="270" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="125" cy="580" r="18" fill="#0F172A"/>
+  <text x="125" y="586" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">3</text>
+  <text x="155" y="588" font-size="18" font-weight="700" fill="#0F172A">设计语言与游戏运行时脱节</text>
+  <g stroke="#94A3B8" stroke-width="2" fill="none">
+    <rect x="725" y="572" width="22" height="16" rx="8"/>
+    <rect x="739" y="572" width="22" height="16" rx="8"/>
+  </g>
+  <text x="105" y="622" font-size="13.5" fill="#64748B">界面描述与游戏代码之间，缺少一座稳定可靠的桥，</text>
+  <text x="105" y="644" font-size="13.5" fill="#64748B">只能靠脆弱的字符串命令或全局句柄勉强拼接</text>
+  <rect x="109" y="666" width="652" height="116" rx="10" fill="#F5F3FF"/>
+  <text x="133" y="696" font-size="13.5" font-weight="700" fill="#6D28D9">Yio 的答案</text>
+  <text x="133" y="722" font-size="13.5" fill="#334155">HTML 标签与 WAI-ARIA 角色 → 稳定类型化对象：</text>
+  <text x="133" y="746" font-size="13.5" fill="#334155">Container · Button · Slider · ListView · Tree</text>
+  <text x="133" y="770" font-size="13.5" fill="#334155">业务代码操作对象、属性与事件，而非字符串</text>
+
+  <!-- ===== Card 4 (bottom-right, green) ===== -->
+  <rect x="815" y="536" width="700" height="270" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#soft)"/>
+  <circle cx="855" cy="580" r="18" fill="#0F172A"/>
+  <text x="855" y="586" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">4</text>
+  <text x="885" y="588" font-size="18" font-weight="700" fill="#0F172A">单一引擎绑定，重复建设</text>
+  <g stroke="#94A3B8" stroke-width="2" fill="none">
+    <rect x="1455" y="570" width="18" height="26" rx="3"/>
+    <rect x="1481" y="570" width="18" height="26" rx="3"/>
+    <line x1="1473" y1="583" x2="1481" y2="583"/>
+  </g>
+  <text x="835" y="622" font-size="13.5" fill="#64748B">UI 与引擎深度绑定，换引擎、多引擎并行时，</text>
+  <text x="835" y="644" font-size="13.5" fill="#64748B">界面等于全部重做，团队重复建设</text>
+  <rect x="839" y="666" width="652" height="116" rx="10" fill="#ECFDF5"/>
+  <text x="863" y="696" font-size="13.5" font-weight="700" fill="#047857">Yio 的答案</text>
+  <text x="863" y="722" font-size="13.5" fill="#334155">布局、文本、滚动、动画收敛于 Rust 核心，</text>
+  <text x="863" y="746" font-size="13.5" fill="#334155">引擎后端只管输入采集、资源加载与渲染映射</text>
+  <text x="863" y="770" font-size="13.5" fill="#334155">Unity 首个落地，UE / Godot 等边界已预留</text>
+</svg>
