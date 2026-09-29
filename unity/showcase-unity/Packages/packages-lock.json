@@ -1,15 +1,5 @@
 {
   "dependencies": {
-    "com.yio.unity": {
-      "version": "file:../../package",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.unity.2d.sprite": "1.0.0",
-        "com.unity.inputsystem": "1.7.0",
-        "com.unity.render-pipelines.universal": "12.1.0"
-      }
-    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
@@ -212,6 +202,30 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "com.yio.core": {
+      "version": "file:../../../csharp/core",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
+    "com.yio.showcase": {
+      "version": "file:../../../showcase/showcase-cs",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.yio.core": "0.0.18"
+      }
+    },
+    "com.yio.unity": {
+      "version": "file:../../package",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.2d.sprite": "1.0.0",
+        "com.unity.inputsystem": "1.7.0",
+        "com.unity.render-pipelines.universal": "12.1.0"
+      }
     },
     "io.github.hatayama.uloopmcp": {
       "version": "https://github.com/hatayama/unity-cli-loop.git?path=/Packages/src",

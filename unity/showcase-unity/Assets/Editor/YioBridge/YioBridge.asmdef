@@ -2,7 +2,8 @@
     "name": "Showcase.YioBridge",
     "rootNamespace": "Showcase.YioBridge",
     "references": [
-        "Yio.Runtime"
+        "Yio.Runtime",
+        "Yio.Core"
     ],
     "includePlatforms": [
         "Editor"
