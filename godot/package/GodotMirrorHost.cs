@@ -43,8 +43,12 @@ namespace Yio
 
         public bool IsContainerAlive(object container) => container is Rid r && r.IsValid;
 
-        /// <summary>clip 链推送：首版 no-op（不裁剪）。SDF 链 shader 后续批。</summary>
-        public void PushClipEntries(uint clipContext, List<ClipEntryView> entries) { }
+        /// <summary>
+        /// clip 链推送：中性 MirrorPool 每帧对 blob 表里每个 ctx 全量重设（idle 全 Skip
+        /// 帧也刷）——经 cache 写该 ctx 的共享 + per-item 材质。
+        /// </summary>
+        public void PushClipEntries(uint clipContext, List<ClipEntryView> entries) =>
+            Materials.SetClipEntries(clipContext, entries);
 
         /// <summary>#62 页逐出心跳：首版 no-op（Godot 侧逐出未接，页常驻）。</summary>
         public void SweepPages() { }
@@ -107,7 +111,24 @@ namespace Yio
             RenderingServer.CanvasItemSetDrawIndex(_item, (int)blob.SortKey(i) + _host.SortBase);
             // 节点 alpha：canvas 管线自动 modulate × 顶点色（等价 Unity col.a *= _Alpha）。
             RenderingServer.CanvasItemSetModulate(_item, new Color(1f, 1f, 1f, blob.Alpha(i)));
-            RenderingServer.CanvasItemSetMaterial(_item, _host.Materials.Get(blob.Program(i)));
+
+            // 材质：program 3-7 的 per-item 参数（色彩矩阵/文字效果/shadow/grad）走
+            // per-item clone 材质（Unity MPB 的对仗——共享材质 uniform 无 per-renderer 通道）；
+            // 其余（含 program 0/1/2 无效果）走 (program, ctx) 共享缓存。
+            byte prog = blob.Program(i);
+            uint maskCtx = blob.MaskContext(i);
+            Rid mat;
+            if (NeedsItemMaterial(blob, i, prog))
+            {
+                EnsureItemMaterial(prog, maskCtx);
+                WriteItemParams(blob, i, prog);
+                mat = _itemMat;
+            }
+            else
+            {
+                mat = _host.Materials.Get(prog, maskCtx);
+            }
+            RenderingServer.CanvasItemSetMaterial(_item, mat);
 
             // 纹理解析：path_idx → path → sprite（字体页优先）；miss → 白纹理。
             _look = default;
@@ -133,9 +154,86 @@ namespace Yio
             }
         }
 
-        /// <summary>重建 mesh（仅 FULL 行调用）。UV 命中 sprite 时重映射进图集子区。</summary>
-        public void UploadMesh(FrameBlob blob, int i)
+        // —— per-item 效果材质（program 3-7 / program 1 带效果；Unity MPB 的对仗）——
+
+        Rid _itemMat;
+
+        /// <summary>program 3-7 恒 per-item（core 产 program 即带参数）；1 仅效果非零时。</summary>
+        static bool NeedsItemMaterial(FrameBlob blob, int i, byte prog)
         {
+            if (prog >= 3 && prog <= 7) return true;
+            if (prog != 1) return false;
+            float[] eb = blob.EffectBlock(i);
+            for (int k = 0; k < eb.Length; k++)
+                if (eb[k] != 0f) return true;
+            return false;
+        }
+
+        void EnsureItemMaterial(int program, uint ctx)
+        {
+            if (_itemMat.IsValid) return;
+            _itemMat = _host.Materials.CreateItemMaterial(program, ctx);
+        }
+
+        /// <summary>per-item uniform 写入（每帧重写——与 Unity MPB 每帧 SetPropertyBlock 同节奏）。</summary>
+        void WriteItemParams(FrameBlob blob, int i, byte prog)
+        {
+            Rid m = _itemMat;
+            if (prog == 1)
+            {
+                float[] eb = blob.EffectBlock(i);
+                RenderingServer.MaterialSetParam(m, "outline_width", eb[0]);
+                RenderingServer.MaterialSetParam(m, "outline_color", new Color(eb[1], eb[2], eb[3], eb[4]));
+                for (int s = 0; s < 3; s++)
+                {
+                    int b = 5 + s * 7;
+                    RenderingServer.MaterialSetParam(m, $"underlay_offset{s}", new Vector4(eb[b], eb[b + 1], 0f, 0f));
+                    RenderingServer.MaterialSetParam(m, $"underlay_softness{s}", eb[b + 2]);
+                    RenderingServer.MaterialSetParam(m, $"underlay_color{s}", new Color(eb[b + 3], eb[b + 4], eb[b + 5], eb[b + 6]));
+                }
+                RenderingServer.MaterialSetParam(m, "glow_power", eb[26]);
+                RenderingServer.MaterialSetParam(m, "glow_color", new Color(eb[27], eb[28], eb[29], eb[30]));
+                RenderingServer.MaterialSetParam(m, "blur_width", eb[31]);
+            }
+            else if (prog == 3 || prog == 4)
+            {
+                // 20 float 矩阵拆 3 行 (rgb 行 + 行 offset)——行 0/1/2 各取 cf[0..3]+off 等。
+                float[] cf = blob.ColorMatrix(i);
+                RenderingServer.MaterialSetParam(m, "cf_m0", new Vector4(cf[0], cf[1], cf[2], cf[4]));
+                RenderingServer.MaterialSetParam(m, "cf_m1", new Vector4(cf[5], cf[6], cf[7], cf[9]));
+                RenderingServer.MaterialSetParam(m, "cf_m2", new Vector4(cf[10], cf[11], cf[12], cf[14]));
+            }
+            else if (prog == 5)
+            {
+                float[] sp = blob.ShadowParams(i);
+                RenderingServer.MaterialSetParam(m, "shadow_half_size", new Vector4(sp[0], sp[1], 0f, 0f));
+                RenderingServer.MaterialSetParam(m, "shadow_radius", sp[2]);
+                RenderingServer.MaterialSetParam(m, "shadow_sigma", sp[3]);
+                RenderingServer.MaterialSetParam(m, "shadow_inset", sp[4]);
+            }
+            else if (prog == 6 || prog == 7)
+            {
+                float[] gp = blob.GradParams(i);
+                int n = Mathf.Min((int)gp[10], 8);
+                if (n < 1) n = 1;
+                RenderingServer.MaterialSetParam(m, "grad_kind", gp[0]);
+                RenderingServer.MaterialSetParam(m, "grad_geom", new Vector4(gp[2], gp[3], gp[4], gp[5]));
+                RenderingServer.MaterialSetParam(m, "grad_geom2", new Vector4(gp[6], gp[7], gp[8], gp[9]));
+                int last = 12 + (n - 1) * 5;
+                var lastCol = new Color(gp[last], gp[last + 1], gp[last + 2], gp[last + 3]);
+                for (int s = 0; s < 8; s++)
+                {
+                    int b = 12 + s * 5;
+                    bool used = s < n;
+                    RenderingServer.MaterialSetParam(m, $"grad_stop{s}",
+                        used ? new Color(gp[b], gp[b + 1], gp[b + 2], gp[b + 3]) : lastCol);
+                    RenderingServer.MaterialSetParam(m, $"grad_pos{s}", used ? gp[b + 4] : 1f);
+                }
+            }
+        }
+
+        /// <summary>重建 mesh（仅 FULL 行调用）。UV 命中 sprite 时重映射进图集子区。</summary>
+        public void UploadMesh(FrameBlob blob, int i)        {
             var seg = blob.ReadMesh(i);
             int vc = seg.Verts.Length;
             var verts = new Vector2[vc];
@@ -179,6 +277,7 @@ namespace Yio
 
         public void Destroy()
         {
+            if (_itemMat.IsValid) _host.Materials.ReleaseItemMaterial(_itemMat);
             if (_item.IsValid) RenderingServer.FreeRid(_item);
             _mesh.Dispose();
         }
