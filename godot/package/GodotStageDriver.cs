@@ -27,6 +27,7 @@ namespace Yio
 
         GodotMaterialCache _materials;
         GodotYioBackend _backend;
+        GodotInputCollector _input;
         YioHost _host;
         string _root;
         Rid _canvas;
@@ -78,7 +79,8 @@ namespace Yio
             // 渲染根：canvas 挂当前 viewport（design 坐标 1:1 直投——FRAGCOORD/canvas 均 y-down）。
             _canvas = RenderingServer.CanvasCreate();
             RenderingServer.ViewportAttachCanvas(GetViewport().GetViewportRid(), _canvas);
-            _backend.SetRuntimeRoot(_canvas);
+            _input = new GodotInputCollector();
+            _backend.SetRuntimeRoot(_canvas, _input);
             _host.SetRootSize(designW, designH);
 
             // 引导序列（引擎无关）：packages → atlas manifests → image sizes。
@@ -103,6 +105,13 @@ namespace Yio
         public override void _Process(double delta)
         {
             _host?.Step((float)delta);
+        }
+
+        /// <summary>引擎事件 → collector 缓冲（CollectInput 帧消费；窗口 top-left y-down
+        /// 与 design 同构，坐标零映射直入）。</summary>
+        public override void _Input(InputEvent @event)
+        {
+            _input?.OnInputEvent(@event);
         }
 
         public override void _ExitTree()

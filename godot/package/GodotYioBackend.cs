@@ -18,6 +18,7 @@ namespace Yio
         readonly GodotMirrorHost _mirror;
         internal readonly GodotSpriteResolver Sprites = new();
         Rid _canvas;                       // 屏幕 root canvas（driver 经 SetRuntimeRoot 注入）
+        GodotInputCollector _input;        // Driver 注入（事件缓冲 + 帧消费）
         byte[] _frameBuf;                  // ArrayPool 复用（同 Unity 版）
         uint _lastFfiPanicCount;           // FFI panic 兜底计数上次采样
         // 字体页纹理拥有者（resolver 只存 RID）——Dispose 时统一释放。
@@ -28,16 +29,26 @@ namespace Yio
             _mirror = new GodotMirrorHost(materials, Sprites);
         }
 
-        /// <summary>driver 注入渲染根 canvas（必须在第一次 SyncFrame 前）。</summary>
-        public void SetRuntimeRoot(Rid canvas) => _canvas = canvas;
+        /// <summary>driver 注入渲染根 canvas + 输入采集器（必须在第一次 SyncFrame 前）。</summary>
+        public void SetRuntimeRoot(Rid canvas, GodotInputCollector input)
+        {
+            _canvas = canvas;
+            _input = input;
+        }
 
         /// <summary>图集页懒加载入口（driver 经 InitSprites 注入产物目录）。</summary>
         public void InitSprites(System.Collections.Generic.List<AtlasManifest> atlases,
             Func<string, ImageTexture> loadPage) =>
             Sprites.Init(atlases, loadPage);
 
-        /// <summary>输入采集：首版空（指针/键盘/滚轮采集是独立批；core 无输入不 crash）。</summary>
-        public override void CollectInput(IntPtr stage) { }
+        /// <summary>
+        /// 输入采集帧消费：collector 缓冲的指针/键盘/滚轮/文本 → set_input 系 FFI
+        ///（引擎中立，collector 内直调——对仗 Unity 版四段采集）。
+        /// </summary>
+        public override void CollectInput(IntPtr stage)
+        {
+            _input?.Collect(stage);
+        }
 
         public override void SyncFrame(IntPtr stage, IntPtr framePtr, int frameLen)
         {

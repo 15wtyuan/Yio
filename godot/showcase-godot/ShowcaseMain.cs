@@ -44,6 +44,46 @@ public partial class ShowcaseMain : Godot.Node
             if (shotIdx + 2 < args.Length) Show(args[shotIdx + 2]);
             await RunShot(args[shotIdx + 1]);
         }
+        // 交互取证：--yio-tap <cardId> <out.png> —— 读导航卡世界矩形中心，程序化注入
+        // 指针事件（Motion→Down→Up，走引擎输入管线 → collector → FFI → core 命中），
+        // 落定后截图。判据 = 页面切到目标页（点击→读数/画面翻转的最响信号）。
+        int tapIdx = Array.IndexOf(args, "--yio-tap");
+        if (tapIdx >= 0 && tapIdx + 2 < args.Length)
+        {
+            await RunTap(args[tapIdx + 1], args[tapIdx + 2]);
+        }
+    }
+
+    async System.Threading.Tasks.Task RunTap(string cardId, string outPath)
+    {
+        for (int i = 0; i < 30; i++)
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        if (_page == null || !_page.TryGet<Yio.Button>(cardId, out var card))
+        {
+            GD.PrintErr($"[yio-tap] card '{cardId}' not found");
+            GetTree().Quit(1);
+            return;
+        }
+        var r = card.Geometry.WorldRect;
+        float cx = r.X + r.Width * 0.5f, cy = r.Y + r.Height * 0.5f;
+        GD.Print($"[yio-tap] tapping '{cardId}' at ({cx:F0},{cy:F0}) rect=({r.X:F0},{r.Y:F0},{r.Width:F0}x{r.Height:F0})");
+
+        var move = new InputEventMouseMotion { Position = new Vector2(cx, cy) };
+        var down = new InputEventMouseButton
+            { Position = new Vector2(cx, cy), ButtonIndex = MouseButton.Left, Pressed = true };
+        var up = new InputEventMouseButton
+            { Position = new Vector2(cx, cy), ButtonIndex = MouseButton.Left, Pressed = false };
+        Input.ParseInputEvent(move);
+        for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        Input.ParseInputEvent(down);
+        for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        Input.ParseInputEvent(up);
+        for (int i = 0; i < 30; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+
+        var img = GetViewport().GetTexture().GetImage();
+        img.SavePng(outPath);
+        GD.Print($"[yio-tap] saved {outPath} (page after tap — should be the card's target)");
+        GetTree().Quit(0);
     }
 
     async System.Threading.Tasks.Task RunShot(string outPath)
