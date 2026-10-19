@@ -1,0 +1,25 @@
+; Engine configuration file.
+; Yio showcase 的 Godot 宿主工程（#14 批 B）。产物（pkg.bin/atlas/fonts）不进本工程——
+; driver 经 FileAccess 直读引擎仓 unity/showcase-unity/Assets/Bundles（yio build 唯一产物源，
+; Unity/Godot 双引擎吃同一份）。
+
+config_version=5
+
+[application]
+
+config/name="YioShowcase"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7", "C#")
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+
+[dotnet]
+
+project/assembly_name="YioShowcase"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"

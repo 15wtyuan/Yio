@@ -1,0 +1,31 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <!-- Bindings（csbindgen unsafe P/Invoke）+ FrameBlob/FontAtlasSync（指针协议）+ Host（borrow_frame） -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>YioShowcase</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    散链接（Compile Include，不走 ProjectReference）——与 headless 三工程同款（tests/dotnet 先例）：
+    internal Native/StageHandle（csbindgen 声明）必须与消费方同程序集才可见（#118 定案背景）。
+    工程拓扑：csharp/core（引擎无关层全量）+ Bindings（FFI 声明）+ showcase-cs（接线主体）
+    + godot/package（Godot 后端）全部编进本程序集。
+  -->
+  <ItemGroup>
+    <Compile Include="..\..\csharp\core\Public\Yio.*.cs" Link="Src\core\Public\%(Filename)%(Extension)" />
+    <Compile Include="..\..\csharp\core\Projection\*.cs" Link="Src\core\Projection\%(Filename)%(Extension)" />
+    <Compile Include="..\..\csharp\core\Host\*.cs" Link="Src\core\Host\%(Filename)%(Extension)" />
+    <Compile Include="..\..\csharp\core\Render\*.cs" Link="Src\core\Render\%(Filename)%(Extension)" />
+    <Compile Include="..\..\csharp\core\Boot\*.cs" Link="Src\core\Boot\%(Filename)%(Extension)" />
+    <Compile Include="..\..\csharp\core\FrameBlob.cs" Link="Src\core\FrameBlob.cs" />
+    <Compile Include="..\..\csharp\core\YioManifests.cs" Link="Src\core\YioManifests.cs" />
+    <Compile Include="..\..\unity\package\Plugins\Yio\Bindings\*.cs" Link="Src\Bindings\%(Filename)%(Extension)" />
+    <Compile Include="..\package\*.cs" Link="Src\godot\%(Filename)%(Extension)" />
+    <Compile Include="..\..\showcase\showcase-cs\ShowcaseWiring.cs" Link="Src\showcase\ShowcaseWiring.cs" />
+  </ItemGroup>
+
+</Project>
