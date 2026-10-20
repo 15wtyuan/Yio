@@ -67,6 +67,67 @@ public partial class ShowcaseMain : Godot.Node
         {
             await RunSmoke();
         }
+        // 手势取证（#59 批1 swipe 顺验）：--yio-swipe <out.png> —— swipe 页 banner 中心
+        // 注入拖拽（Down → 10 帧 Move 流 → Up，跨 40% 宽触发翻页），落定后读 PageIndex
+        // 读数（sw-idx 应 "0"→"1"）+ 截图。手势物理全在 core（引擎无关），本模式验证
+        // 事件流在 Godot 管线不断链。
+        int swipeIdx = Array.IndexOf(args, "--yio-swipe");
+        if (swipeIdx >= 0 && swipeIdx + 1 < args.Length)
+        {
+            await RunSwipe(args[swipeIdx + 1]);
+        }
+    }
+
+    async System.Threading.Tasks.Task RunSwipe(string outPath)
+    {
+        Show("swipe");
+        for (int i = 0; i < 30; i++)
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        if (_page == null || !_page.TryGet<Yio.Container>("sw-banner", out var banner))
+        {
+            GD.PrintErr("[yio-swipe] sw-banner not found");
+            GetTree().Quit(1);
+            return;
+        }
+        var r = banner.Geometry.WorldRect;
+        float y = r.Y + r.Height * 0.5f;
+        float x0 = r.X + r.Width * 0.5f;
+        float xEnd = x0 - r.Width * 0.4f;   // 左滑 40%（> 1/3 翻页阈值）
+
+        void Inject(Vector2 pos, bool? pressed)
+        {
+            if (pressed == null) Input.ParseInputEvent(new InputEventMouseMotion { Position = pos });
+            else Input.ParseInputEvent(new InputEventMouseButton
+            {
+                Position = pos, ButtonIndex = MouseButton.Left, Pressed = pressed.Value,
+            });
+        }
+
+        Inject(new Vector2(x0, y), null);
+        Inject(new Vector2(x0, y), true);
+        for (int i = 0; i < 5; i++)
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        for (int s = 1; s <= 10; s++)
+        {
+            Inject(new Vector2(x0 + (xEnd - x0) * s / 10f, y), null);
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        }
+        Inject(new Vector2(xEnd, y), false);
+        for (int i = 0; i < 45; i++)
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        GD.Print($"[yio-swipe] scroll state after release:\n{_driver.Host.DumpSceneTree("sw-banner")}");
+
+        // 读数双类型尝试：HTML div 的投影类型按内容判定（AGENTS：div 配 TryGet<TextElement>
+        // 是静默死线——Container 也有 TextContent，两种都试并报告命中类型）。
+        string idx = "(missing)";
+        if (_page.TryGet<Yio.TextElement>("sw-idx", out var te)) idx = te.TextContent + " [TextElement]";
+        else if (_page.TryGet<Yio.Container>("sw-idx", out var cc)) idx = cc.TextContent + " [Container]";
+        GD.Print($"[yio-swipe] PageIndex readout after swipe = '{idx}' (expect '1...')");
+        // scroll 探针：pos 反映 snap 物理（0→720 = 翻一页）。读数/dots 不随动 =
+        // PageChanged 事件→wiring 读数链问题（#59 既有债，见 issue；与 Godot 无关）。
+        var img = GetViewport().GetTexture().GetImage();
+        img.SavePng(outPath);
+        GetTree().Quit(idx.StartsWith("1") ? 0 : 1);
     }
 
     async System.Threading.Tasks.Task RunSmoke()
