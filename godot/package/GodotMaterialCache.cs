@@ -41,6 +41,8 @@ namespace Yio
         // 圆角 SDF 归一化到半径空间再 × min(rx,ry) 回像素量纲（1 design px AA 带）——
         // 与 core hit gate / Unity shader 同一几何语义，改须两侧同步。
         const string ClipUniforms = @"
+global uniform vec2 yio_adapt_off = vec2(0.0);   // 适配逆映射（driver 设置；1:1 恒等）
+global uniform float yio_adapt_scale = 1.0;
 uniform vec4 clip_frame0[4];   // (A, C, Tx, shapeKind)
 uniform vec4 clip_frame1[4];   // (B, D, Ty, rectKind)
 uniform vec4 clip_rect[4];     // (w, h, poly_count, _)
@@ -51,10 +53,12 @@ uniform vec4 clip_poly[32];    // 每 entry 8 vec4 × 2 点
 uniform float clip_count;
 ";
         const string ClipApply = @"
-    // designPos：FRAGCOORD（canvas 无变换、窗口=设计分辨率 → 1:1 design 坐标，y-down）。
+    // designPos：FRAGCOORD 逆映射回 design 坐标（适配开启时 canvas 变换 = design·scale
+    // + offset——FRAGCOORD 是变换后的屏幕像素）。全局 uniform 由 driver 适配重算时设置
+    //（1:1 时为恒等），所有材质共享，无 per-material 传递。
+    vec2 design_pos = (FRAGCOORD.xy - yio_adapt_off) / yio_adapt_scale;
     for (int e = 0; e < 4; e++) {
         if (e >= int(clip_count)) break;
-        vec2 design_pos = FRAGCOORD.xy;
         vec2 lp = vec2(dot(clip_frame0[e].xy, design_pos) + clip_frame0[e].z,
                        dot(clip_frame1[e].xy, design_pos) + clip_frame1[e].z);
         float shape_kind = clip_frame0[e].w;

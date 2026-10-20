@@ -23,3 +23,14 @@ project/assembly_name="YioShowcase"
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
+
+[shader_globals]
+
+yio_adapt_off={
+"type": "vec2",
+"value": Vector2(0, 0)
+}
+yio_adapt_scale={
+"type": "float",
+"value": 1.0
+}

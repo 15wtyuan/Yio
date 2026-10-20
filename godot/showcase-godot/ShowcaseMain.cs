@@ -30,14 +30,21 @@ public partial class ShowcaseMain : Godot.Node
             pkg => _driver.ReadBytesFile($"ui/{pkg}.pkg.bin"),
             Show,
             msg => GD.Print($"[showcase] {msg}"),
-            // 运行时适配模式切换首版不支持（适配是后续批）。
-            _ => false);
+            _driver.SetAdaptMode);
         _wiring.Setup(ctx);
         Show("home");
 
+        var args = OS.GetCmdlineArgs();
+
+        // 适配取证：--yio-adapt <mode> —— boot 后切换适配模式再截图（letterbox 黑边 /
+        // fit 重排的肉眼强信号判据；与 --resolution <WxH> 组合用。判据注意：letterbox
+        // 空边是 Godot 默认清屏深灰 RGB(76,76,76)，不是纯黑——阈值放宽到 <100）。
+        int adaptIdx = Array.IndexOf(args, "--yio-adapt");
+        if (adaptIdx >= 0 && adaptIdx + 1 < args.Length)
+            GD.Print($"[adapt] set '{args[adaptIdx + 1]}' -> {_driver.SetAdaptMode(args[adaptIdx + 1])}");
+
         // 取证模式：--yio-shot <out.png> [页名] —— 入场动画稳定后整窗截图并退出
         //（批 B 验收证据链：程序化截图 vs Unity 基线并排归因；CI smoke 复用同路径）。
-        var args = OS.GetCmdlineArgs();
         int shotIdx = Array.IndexOf(args, "--yio-shot");
         if (shotIdx >= 0 && shotIdx + 1 < args.Length)
         {

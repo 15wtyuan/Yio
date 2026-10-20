@@ -31,6 +31,8 @@ namespace Yio
         YioHost _host;
         string _root;
         Rid _canvas;
+        float _designW, _designH;   // 设计分辨率（manifest 正主；_Ready 解析存底）
+        uint _modeU32;              // 适配模式（0=letterbox 1=fit-width 2=fit-height）
 
         public YioHost Host => _host;
         public GodotYioBackend Backend => _host != null ? _backend : null;
@@ -81,7 +83,12 @@ namespace Yio
             RenderingServer.ViewportAttachCanvas(GetViewport().GetViewportRid(), _canvas);
             _input = new GodotInputCollector();
             _backend.SetRuntimeRoot(_canvas, _input);
-            _host.SetRootSize(designW, designH);
+
+            // 适配（三模式策略数学在 Rust——compute_adaptation 单源）：manifest 的
+            // design/match_mode 是正主。1:1 窗口时结果即恒等映射。
+            _designW = designW; _designH = designH;
+            _modeU32 = Yio.Bindings.YioAdaptMode.FromString(runtime?.match_mode) ?? 0u;
+            RecomputeAdaptation();
 
             // 引导序列（引擎无关）：packages → atlas manifests → image sizes。
             var boot = new YioBootstrapper(_host, new BundlesLoadSource(this),
@@ -112,6 +119,75 @@ namespace Yio
         public override void _Input(InputEvent @event)
         {
             _input?.OnInputEvent(@event);
+        }
+
+        public override void _Notification(int what)
+        {
+            // 窗口 resize → 适配重算（fit 模式画布一维随窗口流动；letterbox 黑边重居中）。
+            if (what == NotificationWMSizeChanged)
+                RecomputeAdaptation();
+        }
+
+        /// <summary>
+        /// 运行时切换适配模式（letterbox / fit-width / fit-height）——立即重算并喂 Stage
+        /// 重排（fit 模式画布随屏幕变，vw/vh/% 当帧跟随）。对仗 Unity Driver.SetAdaptMode。
+        /// 未知字符串返 false 不动现状。
+        /// </summary>
+        public bool SetAdaptMode(string mode)
+        {
+            var m = Yio.Bindings.YioAdaptMode.FromString(mode);
+            if (!m.HasValue) return false;
+            _modeU32 = m.Value;
+            RecomputeAdaptation();
+            return true;
+        }
+
+        /// <summary>
+        /// 适配重算：窗口/安全区 → Rust compute_adaptation（单源）→ 三出口：canvas 变换
+        ///（渲染：screen = design·scale + offset——y-down 同向无翻转，对仗 Unity root
+        /// transform 的 scale+y-flip）、SetRootSize（fit 模式一维流动）、输入映射注入。
+        /// </summary>
+        unsafe void RecomputeAdaptation()
+        {
+            if (_host == null || _input == null) return;
+            float dw = _designW > 0 ? _designW : 1920f;
+            float dh = _designH > 0 ? _designH : 1080f;
+            var vpSize = GetViewport().GetVisibleRect().Size;
+            float sw = vpSize.X, sh = vpSize.Y;
+            // safe 区桌面恒传全窗：Godot DisplayServer.GetDisplaySafeArea 是显示器全局
+            // 坐标（多显示器下含跨屏原点，直接传会污染 contain 框——实测 off=(1963,0)）。
+            // notch/圆角是移动端议题，届时按窗口位置换算局部 safe（Unity 侧 Screen.safeArea
+            // 语义 = 窗口相对 top-down）。
+            float safeX = 0f, safeY = 0f, safeW = sw, safeH = sh;
+
+            var r = new Yio.Bindings.AdaptResult();
+            if (Yio.Bindings.Native.yio_compute_adaptation(
+                    dw, dh, sw, sh, safeX, safeY, safeW, safeH, _modeU32, &r) != 0)
+            {
+                GD.PrintErr("[GodotStageDriver] yio_compute_adaptation failed — keeping current mapping");
+                return;
+            }
+            _input.MapScale = r.scale;
+            _input.MapOffX = r.offset_x;
+            _input.MapOffY = r.offset_y;
+
+            // canvas 变换：design → screen（含 letterbox 偏移与缩放）。RS per-canvas 版本
+            //（viewport 属性对 RS 直建 canvas 无效——GDScript 探针实验定案；item 变换与
+            // canvas 变换叠加语义 screen = canvasT × itemT × vertex 已实测验证）。
+            var adaptT = new Transform2D(
+                new Vector2(r.scale, 0f), new Vector2(0f, r.scale),
+                new Vector2(r.offset_x, r.offset_y));
+            RenderingServer.ViewportSetCanvasTransform(GetViewport().GetViewportRid(), _canvas, adaptT);
+
+            // clip shader 的 design 测试空间依赖适配逆映射（全局 uniform——所有材质共享，
+            // canvas 变换后的 FRAGCOORD 须映回 design 才能对 clip 链 inv_frame 测试）。
+            RenderingServer.GlobalShaderParameterSet("yio_adapt_off",
+                new Vector2(r.offset_x, r.offset_y));
+            RenderingServer.GlobalShaderParameterSet("yio_adapt_scale",
+                r.scale > 0f ? r.scale : 1f);
+
+            if (!_host.SetRootSize(r.root_w, r.root_h))
+                GD.PrintErr($"[GodotStageDriver] set_root_size({r.root_w},{r.root_h}) rejected");
         }
 
         public override void _ExitTree()

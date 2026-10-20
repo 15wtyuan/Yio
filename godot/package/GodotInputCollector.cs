@@ -32,15 +32,29 @@ namespace Yio
         readonly List<PointerEvent> _pointerEdge = new();
         readonly List<KeyEvent> _keys = new();
         readonly List<uint> _text = new();
-        Vector2 _mousePos;
+        Vector2 _mousePos;                 // 指针位置（design 坐标——入缓冲时已映射）
         float _wheelX, _wheelY;
+
+        // screen→design 适配映射三元组（单源 = Rust yio_compute_adaptation，driver 每次适配
+        // 重算后注入）。默认恒等（窗口=设计分辨率 1:1）。Godot viewport 坐标 top-left
+        // y-down 与 design 同向——无 Unity 的 screenH-y 翻转项。
+        internal float MapScale = 1f;
+        internal float MapOffX;
+        internal float MapOffY;
+
+        Vector2 ScreenToDesign(Vector2 screen)
+        {
+            float s = MapScale > 0 ? MapScale : 1f;
+            return new Vector2((screen.X - MapOffX) / s, (screen.Y - MapOffY) / s);
+        }
 
         /// <summary>Driver._Input 转发入口（帧内可多次，CollectInput 消费清空）。</summary>
         public void OnInputEvent(InputEvent e)
         {
             if (e is InputEventMouseButton mb)
             {
-                _mousePos = mb.Position;
+                var d = ScreenToDesign(mb.Position);
+                _mousePos = d;
                 switch (mb.ButtonIndex)
                 {
                     case MouseButton.Left:
@@ -66,7 +80,7 @@ namespace Yio
             }
             else if (e is InputEventMouseMotion mm)
             {
-                _mousePos = mm.Position;
+                _mousePos = ScreenToDesign(mm.Position);
             }
             else if (e is InputEventKey k)
             {

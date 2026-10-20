@@ -25,6 +25,9 @@ namespace Yio
         internal readonly GodotSpriteResolver Sprites;
         /// <summary>纯色兜底纹理（1×1 白，对仗 Unity Texture2D.whiteTexture）。</summary>
         internal readonly Rid WhiteTex;
+        // ImageTexture 包装对象必须持引用：只留 RID 的话 C# GC 会释放 native 纹理
+        //（GodotObject 终结器释放 RID——散链接同程序集后全字段持有是铁律）。
+        readonly ImageTexture _whiteTexOwner;
 
         /// <summary>跨 Stage 排序基址（多 Stage 时由驱动下发；单 Stage 恒 0）。</summary>
         internal int SortBase = 0;
@@ -35,7 +38,8 @@ namespace Yio
             Sprites = sprites;
             var img = Godot.Image.CreateFromData(1, 1, false, Godot.Image.Format.Rgba8,
                 new byte[] { 255, 255, 255, 255 });
-            WhiteTex = ImageTexture.CreateFromImage(img).GetRid();
+            _whiteTexOwner = ImageTexture.CreateFromImage(img);
+            WhiteTex = _whiteTexOwner.GetRid();
         }
 
         public IMirrorObject CreateObject(object parent) =>
@@ -55,10 +59,8 @@ namespace Yio
 
         internal void Dispose()
         {
-            if (WhiteTex.IsValid)
-            {
-                RenderingServer.FreeRid(WhiteTex);
-            }
+            // 经包装对象释放(而非裸 FreeRid)——终结器不再重复释放同一 RID。
+            _whiteTexOwner?.Dispose();
         }
     }
 
