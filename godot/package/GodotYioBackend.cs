@@ -95,6 +95,9 @@ namespace Yio
                 msg => GD.PrintErr($"[GodotYioBackend] {msg}"));
         }
 
+        /// <summary>当前镜像渲染对象数（CI smoke 树级/投影不分叉断言用——两引擎同量级）。</summary>
+        public int MirrorCount => _pool.Count;
+
         /// <summary>dump 当前镜像池状态（Godot 渲染视角，批 B 验收探针用）。</summary>
         public string DumpMirrorState()
         {

@@ -52,6 +52,43 @@ public partial class ShowcaseMain : Godot.Node
         {
             await RunTap(args[tapIdx + 1], args[tapIdx + 2]);
         }
+        // CI smoke（#14 硬验收）：headless 三档断言——帧级（帧循环推进）/树级
+        //（DumpSceneJson 节点数 + 关键元素存在）/投影级（镜像池对象数下限——两引擎
+        // 同量级 = 渲染树投影不分叉强信号）。退出码 0/1 + "[smoke] ALL PASS" 输出
+        //（spike 教训：C# 挂了 Godot 退出码仍 0，CI 须 grep 输出双断言）。
+        if (Array.IndexOf(args, "--yio-smoke") >= 0)
+        {
+            await RunSmoke();
+        }
+    }
+
+    async System.Threading.Tasks.Task RunSmoke()
+    {
+        int failures = 0;
+        void Check(string name, bool ok, string detail = "")
+        {
+            GD.Print($"[smoke] {(ok ? "PASS" : "FAIL")} {name}{(detail.Length > 0 ? $" — {detail}" : "")}");
+            if (!ok) failures++;
+        }
+
+        ulong frame0 = Engine.GetProcessFrames();
+        for (int i = 0; i < 30; i++)
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        // 30 次 await 对应 29-30 帧差（首次 await 时当前帧已计数）——断言下限 25 即可，
+        // 判据是「帧循环在推进」不是精确计数。
+        Check("frame-loop", Engine.GetProcessFrames() - frame0 >= 25,
+            $"frames={Engine.GetProcessFrames() - frame0}");
+
+        string json = _driver?.Host?.DumpSceneJson();
+        Check("scene-tree", !string.IsNullOrEmpty(json) && json.Length > 2000,
+            $"dumpLen={json?.Length ?? 0}");
+        Check("nav-card-present", json?.Contains("nav-shop") == true);
+
+        int mirror = _driver?.Backend?.MirrorCount ?? 0;
+        Check("mirror-pool", mirror > 20, $"objs={mirror}");
+
+        GD.Print(failures == 0 ? "[smoke] ALL PASS" : $"[smoke] {failures} FAILURES");
+        GetTree().Quit(failures == 0 ? 0 : 1);
     }
 
     async System.Threading.Tasks.Task RunTap(string cardId, string outPath)
