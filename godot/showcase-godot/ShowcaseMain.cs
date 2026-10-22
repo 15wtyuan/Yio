@@ -125,8 +125,7 @@ public partial class ShowcaseMain : Godot.Node
         GD.Print($"[yio-swipe] PageIndex readout after swipe = '{idx}' (expect '1...')");
         // scroll 探针：pos 反映 snap 物理（0→720 = 翻一页）。读数/dots 不随动 =
         // PageChanged 事件→wiring 读数链问题（#59 既有债，见 issue；与 Godot 无关）。
-        var img = GetViewport().GetTexture().GetImage();
-        img.SavePng(outPath);
+        SaveShot(outPath);
         GetTree().Quit(idx.StartsWith("1") ? 0 : 1);
     }
 
@@ -154,6 +153,42 @@ public partial class ShowcaseMain : Godot.Node
 
         int mirror = _driver?.Backend?.MirrorCount ?? 0;
         Check("mirror-pool", mirror > 20, $"objs={mirror}");
+
+        // 交互档（#14 checkbox：模拟点击→读数/画面翻转；#119 前用「切页 → 场景树变化」
+        // 强信号——swipe 读数链是 #59 的债，不在本断言路径上）。
+        if (_page != null && _page.TryGet<Yio.Button>("nav-shop", out var card))
+        {
+            // 等入场交错动画落定（~0.5s@60fps）再读几何点击——动画位移中按上帧 rect
+            // 点会脱靶（实测 smoke 30 帧时偶发不切页）。
+            for (int i = 0; i < 40; i++)
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            var r = card.Geometry.WorldRect;
+            float cx = r.X + r.Width * 0.5f, cy = r.Y + r.Height * 0.5f;
+            // 注入节奏与 --yio-tap（窗口验证绿）同款：Motion → 3 帧 → Down → 3 帧 → Up。
+            // 同帧三连注入 core 不判 Clicked（press 期需跨 tick——headless 实测）。
+            Input.ParseInputEvent(new InputEventMouseMotion { Position = new Vector2(cx, cy) });
+            for (int i = 0; i < 3; i++)
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            Input.ParseInputEvent(new InputEventMouseButton
+                { Position = new Vector2(cx, cy), ButtonIndex = MouseButton.Left, Pressed = true });
+            for (int i = 0; i < 3; i++)
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            Input.ParseInputEvent(new InputEventMouseButton
+                { Position = new Vector2(cx, cy), ButtonIndex = MouseButton.Left, Pressed = false });
+            for (int i = 0; i < 30; i++)
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            string dump2 = _driver?.Host?.DumpSceneJson() ?? "";
+            // 断言锚：nav-shop 是 home 导航卡——从场景树消失 = 整棵 home 树已卸载换页
+            //（shop 页顶层只有非特异的 page-top 组件 + 初始 display:none 的 buy-dialog，
+            // 正向锚不可靠；负向消失已是「点击→整页翻转」的强证据）。
+            Check("tap-page-swap",
+                !dump2.Contains("nav-shop") && dump2.Length > 5000,
+                $"home tree gone={!dump2.Contains("nav-shop")} dumpLen={dump2.Length}");
+        }
+        else
+        {
+            Check("tap-page-swap", false, "nav-shop card not found");
+        }
 
         GD.Print(failures == 0 ? "[smoke] ALL PASS" : $"[smoke] {failures} FAILURES");
         GetTree().Quit(failures == 0 ? 0 : 1);
@@ -184,11 +219,40 @@ public partial class ShowcaseMain : Godot.Node
         for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         Input.ParseInputEvent(up);
         for (int i = 0; i < 30; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        string tapDump = _driver?.Host?.DumpSceneTree("nav-shop") ?? "";
+        GD.Print($"[yio-tap] nav-shop after tap: {(tapDump.Contains("nav-shop") ? "STILL-PRESENT (no swap)" : "GONE (page swapped)")}");
+        GD.Print($"[yio-tap] nav-shop after tap: {(tapDump.Contains("nav-shop") ? "STILL-PRESENT (no swap)" : "GONE (page swapped)")}");
 
-        var img = GetViewport().GetTexture().GetImage();
-        img.SavePng(outPath);
-        GD.Print($"[yio-tap] saved {outPath} (page after tap — should be the card's target)");
+        SaveShot(outPath);
+        GD.Print("[yio-tap] page after tap captured — should be the card's target");
         GetTree().Quit(0);
+    }
+
+    /// <summary>headless（dummy 渲染器）无帧缓冲可截——截图路径跳过，断言照跑。
+    /// async void 吞异常的教训：GetTexture() 在 headless 下抛错会让 Quit 永不执行。</summary>
+    static bool IsHeadless => DisplayServer.GetName() == "headless";
+
+    static void SaveShot(string outPath)
+    {
+        if (IsHeadless)
+        {
+            GD.Print($"[shot] headless — skip screenshot {outPath}");
+            return;
+        }
+        var img = GetViewportSafePng();
+        if (img == null) return;
+        img.SavePng(outPath);
+        GD.Print($"[shot] saved {outPath} ({img.GetWidth()}x{img.GetHeight()})");
+    }
+
+    static Godot.Image GetViewportSafePng()
+    {
+        try { return ((SceneTree)Engine.GetMainLoop()).Root.GetTexture().GetImage(); }
+        catch (System.Exception e)
+        {
+            GD.PrintErr($"[shot] viewport capture failed: {e.Message}");
+            return null;
+        }
     }
 
     async System.Threading.Tasks.Task RunShot(string outPath)
@@ -196,9 +260,7 @@ public partial class ShowcaseMain : Godot.Node
         const int settleFrames = 60; // 入场动画落定（交错入场 ~0.5s@60fps）
         for (int i = 0; i < settleFrames; i++)
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        var img = GetViewport().GetTexture().GetImage();
-        img.SavePng(outPath);
-        GD.Print($"[yio-shot] saved {outPath} ({img.GetWidth()}x{img.GetHeight()})");
+        SaveShot(outPath);
         GetTree().Quit(0);
     }
 

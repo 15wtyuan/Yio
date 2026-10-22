@@ -146,13 +146,18 @@ namespace Yio
         /// 适配重算：窗口/安全区 → Rust compute_adaptation（单源）→ 三出口：canvas 变换
         ///（渲染：screen = design·scale + offset——y-down 同向无翻转，对仗 Unity root
         /// transform 的 scale+y-flip）、SetRootSize（fit 模式一维流动）、输入映射注入。
+        /// headless（dummy 显示器 64x64 假窗口）无适配概念——viewport 视为设计分辨率
+        /// （恒等映射；否则 fit-width 会算出 scale≈0.03，输入坐标被放大 30 倍全 miss）。
         /// </summary>
         unsafe void RecomputeAdaptation()
         {
             if (_host == null || _input == null) return;
             float dw = _designW > 0 ? _designW : 1920f;
             float dh = _designH > 0 ? _designH : 1080f;
-            var vpSize = GetViewport().GetVisibleRect().Size;
+            bool headless = DisplayServer.GetName() == "headless";
+            var vpSize = headless
+                ? new Vector2(dw, dh)
+                : GetViewport().GetVisibleRect().Size;
             float sw = vpSize.X, sh = vpSize.Y;
             // safe 区桌面恒传全窗：Godot DisplayServer.GetDisplaySafeArea 是显示器全局
             // 坐标（多显示器下含跨屏原点，直接传会污染 contain 框——实测 off=(1963,0)）。
