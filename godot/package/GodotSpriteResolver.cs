@@ -29,10 +29,18 @@ namespace Yio
 
     public sealed class GodotSpriteResolver
     {
+        /// <summary>页缓存条目:纹理 + 最后使用时刻(秒,Time.GetTicksMsec 换算——
+        /// wall-clock 语义对齐 Unity 的 Time.unscaledTime,暂停/缩放不影响)。</summary>
+        struct PageEntry
+        {
+            public ImageTexture Tex;
+            public float LastUsed;
+        }
+
         // sprite_key → (atlasIdx, page, uvRect(u0,v0,u1,v1), origW, origH)。所有 atlas 合并一张全局表。
         Dictionary<string, (int atlasIdx, int page, Vector4 uv, int ow, int oh)> _sprites;
-        // 页纹理缓存：(atlasIdx, page) → ImageTexture（.GetRid() 给 add_mesh）；null = 加载失败已缓存。
-        readonly Dictionary<(int, int), ImageTexture> _pageCache = new();
+        // 页纹理缓存：(atlasIdx, page) → entry；null = 加载失败已缓存。
+        readonly Dictionary<(int, int), PageEntry> _pageCache = new();
         // 字体图集页：path → 全区域 lookup（RegisterFontAtlasPage 注入，优先于 sprite 表）。
         readonly Dictionary<string, GodotSpriteLookup> _fontPages = new();
         // 页文件名表：(atlasIdx, page) → png 文件名（懒加载用）。
@@ -41,6 +49,18 @@ namespace Yio
         Func<string, ImageTexture> _loadPage;
         // miss 去重告警。
         readonly HashSet<string> _warned = new();
+        // Sweep 受害者收集，成员复用（每帧零分配——对仗 Unity 版）。
+        readonly List<(int, int)> _evictScratch = new();
+
+        /// <summary>
+        /// 页纹理逐出宽限期（秒）：一页从最后一次被画起计时，超时即释放（#62
+        /// expireAfterAccess 语义；每次被画续命）。≤0 禁用逐出。
+        /// </summary>
+        public float PageEvictionGraceSeconds { get; set; } = 10f;
+        /// <summary>当前缓存的页纹理数（含未过宽限期的闲置页）。</summary>
+        public int PagesAlive => _pageCache.Count;
+        /// <summary>会话累计逐出页数。验收读数：逐出后重载应 +1 且不再变。</summary>
+        public int PagesEvictedTotal { get; private set; }
 
         public void Init(List<AtlasManifest> atlases, Func<string, ImageTexture> loadPage)
         {
@@ -88,8 +108,7 @@ namespace Yio
                 {
                     look.Tex = tex.GetRid();
                     return look;
-                }
-                // 页未加载成功：按未命中处理（fallback 白纹理，不崩）。
+                }                // 页未加载成功：按未命中处理（fallback 白纹理，不崩）。
                 if (_warned.Add(path))
                     GD.PrintErr($"[GodotSpriteResolver] page texture unavailable for '{path}'");
                 look.Found = false;
@@ -114,21 +133,60 @@ namespace Yio
 
         bool TryGetPageTex(int atlasIdx, int page, out ImageTexture tex)
         {
-            if (_pageCache.TryGetValue((atlasIdx, page), out tex)) return tex != null;
+            if (_pageCache.TryGetValue((atlasIdx, page), out var entry))
+            {
+                tex = entry.Tex;
+                if (tex != null && PageEvictionGraceSeconds > 0f)
+                    StampPage((atlasIdx, page));
+                return tex != null;
+            }
             tex = null;
             if (_loadPage == null || _atlasPages == null
                 || atlasIdx >= _atlasPages.Count || page >= _atlasPages[atlasIdx].Count)
                 return false;
             string fileName = _atlasPages[atlasIdx][page];
             tex = _loadPage(fileName);
-            _pageCache[(atlasIdx, page)] = tex; // null 也缓存（加载失败不重试）
+            _pageCache[(atlasIdx, page)] = new PageEntry { Tex = tex, LastUsed = NowSeconds }; // null 也缓存（加载失败不重试）
             return tex != null;
         }
+
+        /// <summary>#62 盖章续命：本页仍被画/被查询（expireAfterAccess 的 access）。</summary>
+        public void StampPage((int AtlasIdx, int Page) key)
+        {
+            if (_pageCache.TryGetValue(key, out var e) && e.Tex != null)
+            {
+                e.LastUsed = NowSeconds;
+                _pageCache[key] = e;
+            }
+        }
+
+        /// <summary>
+        /// #62 逐出心跳（MirrorHost.SweepPages 每帧调）：闲置超宽限期的页纹理释放。
+        /// 字体页不在 _pageCache（独立字典）——结构性豁免，与 Unity 版同语义。
+        /// </summary>
+        public void Sweep()
+        {
+            float grace = PageEvictionGraceSeconds;
+            if (grace <= 0f || _pageCache.Count == 0) return;
+            float now = NowSeconds;
+            _evictScratch.Clear();
+            foreach (var kv in _pageCache)
+                if (kv.Value.Tex != null && now - kv.Value.LastUsed > grace)
+                    _evictScratch.Add(kv.Key);
+            foreach (var key in _evictScratch)
+            {
+                _pageCache[key].Tex?.Dispose();
+                _pageCache.Remove(key);
+                PagesEvictedTotal++;
+            }
+        }
+
+        static float NowSeconds => Time.GetTicksMsec() / 1000f;
 
         public void Clear()
         {
             foreach (var kv in _pageCache)
-                kv.Value?.Dispose();
+                kv.Value.Tex?.Dispose();
             _pageCache.Clear();
             // 字体页归 backend 拥有（FontAtlasSync sink 建），此处只清表。
             _fontPages.Clear();

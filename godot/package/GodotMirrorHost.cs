@@ -54,8 +54,8 @@ namespace Yio
         public void PushClipEntries(uint clipContext, List<ClipEntryView> entries) =>
             Materials.SetClipEntries(clipContext, entries);
 
-        /// <summary>#62 页逐出心跳：首版 no-op（Godot 侧逐出未接，页常驻）。</summary>
-        public void SweepPages() { }
+        /// <summary>#62 页逐出心跳：每帧扫闲置页（宽限/盖章细节在 resolver）。</summary>
+        public void SweepPages() => Sprites?.Sweep();
 
         internal void Dispose()
         {
@@ -76,6 +76,8 @@ namespace Yio
         bool _visible = true;
         // UpdateHeader 解析的 sprite look——UploadMesh 的 UV 重映射复用（调用序恒 Header 先）。
         GodotSpriteLookup _look;
+        // #62 本帧绑定的图集页键（null=非页承载：字体页/miss/纯色——不参与续命）。
+        (int AtlasIdx, int Page)? _boundPage;
 
         internal GodotMirrorObj(GodotMirrorHost host, object parent)
         {
@@ -87,8 +89,12 @@ namespace Yio
 
         public bool VisuallyActive => _item.IsValid && _visible;
 
-        /// <summary>#62 盖章：首版 no-op（Godot 侧逐出未接）。</summary>
-        public void StampPage() { }
+        /// <summary>#62 盖章续命本对象绑定的图集页（无绑定页 no-op；Skip 帧不调用）。</summary>
+        public void StampPage()
+        {
+            if (_boundPage.HasValue && _host.Sprites != null)
+                _host.Sprites.StampPage(_boundPage.Value);
+        }
 
         public void SetActive(bool active)
         {
@@ -133,7 +139,9 @@ namespace Yio
             RenderingServer.CanvasItemSetMaterial(_item, mat);
 
             // 纹理解析：path_idx → path → sprite（字体页优先）；miss → 白纹理。
+            // 命中页键随 look 刷新（#62：绑定变化即续命语义转移）。
             _look = default;
+            _boundPage = null;
             Rid tex = _host.WhiteTex;
             uint pathIdx = blob.PathIdx(i);
             if (pathIdx != 0)
@@ -142,7 +150,11 @@ namespace Yio
                 if (!string.IsNullOrEmpty(path))
                 {
                     _look = _host.Sprites.GetSprite(path);
-                    if (_look.Found) tex = _look.Tex;
+                    if (_look.Found)
+                    {
+                        tex = _look.Tex;
+                        _boundPage = _look.PageKey;
+                    }
                 }
             }
 
